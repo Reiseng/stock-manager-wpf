@@ -1,0 +1,25 @@
+﻿<Window x:Class="StockControl.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:StockControl.ViewModels"
+        Title="Stock Control" Height="Auto" Width="Auto">
+
+    <Window.DataContext>
+        <vm:MainWindowViewModel/>
+    </Window.DataContext>
+
+    <DockPanel>
+        <!-- Lateral menu -->
+        <StackPanel DockPanel.Dock="Right" Width="200" Background="#2D2D30">
+            <Button Content="Productos" Command="{Binding ShowProductsCommand}" Margin="10" Height="40"/>
+            <Button Content="Clientes" Command="{Binding ShowClientsCommand}" Margin="10" Height="40"/>
+            <Button Content="Vender" Margin="10" Height="40" Command="{Binding OpenCheckoutCommand}"/>
+            <Button Content="Historial de ventas" Margin="10" Height="40" Command="{Binding ShowCheckoutHistoryCommand}"/>
+            <Button Content="Usuarios" Command="{Binding ShowUsersCommand}" Margin="10" Height="40"/>
+            <Button Content="Configuración" Command="{Binding ShowSettingsCommand}" Margin="10" Height="40"/>
+        </StackPanel>
+
+        <!-- Dinamic content -->
+        <ContentControl Content="{Binding CurrentView}" />
+    </DockPanel>
+</Window>

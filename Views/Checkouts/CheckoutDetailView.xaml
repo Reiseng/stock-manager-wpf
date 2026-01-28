@@ -1,0 +1,79 @@
+<UserControl x:Class="StockControl.Views.Checkouts.CheckoutDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+<DockPanel>
+    <!-- Principal content -->
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- Client/Search-->
+            <RowDefinition Height="*"/>     <!-- grill -->
+            <RowDefinition Height="Auto"/>  <!-- total / actions -->
+        </Grid.RowDefinitions>
+
+        <!-- Client + Search -->
+        <Grid Grid.Row="0" Margin="0 0 0 10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Client info -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Cliente:"
+                           FontWeight="Bold"
+                           Margin="0 0 5 0"/>
+
+                <TextBlock Text="{Binding ClientFullName, PresentationTraceSources.TraceLevel=High}"
+                           Margin="0 10 10 0"/>
+
+                <TextBlock Text="{Binding ClientDocument, PresentationTraceSources.TraceLevel=High}"
+                           Foreground="Gray"/>
+            </StackPanel>
+
+        </Grid>
+
+        <!-- Items -->
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Items}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserAddRows="False">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="Auto"/>
+                <DataGridTextColumn Header="Cant." Binding="{Binding Quantity}" Width="80"/>
+                <DataGridTextColumn Header="Tipo"
+                                    Binding="{Binding Unit,
+                                        Converter={StaticResource EnumDescriptionConverter}}"
+                                    Width="80"/>
+                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice}" Width="100"/>
+                <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Button + Total of sale -->
+        <Grid Grid.Row="2" Margin="0 10 0 0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="{Binding Total, StringFormat=Total: ${0:N2}}"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Ticket"
+                        IsEnabled="False"
+                        Margin="5"/>
+                <Button Content="PDF"
+                        IsEnabled="False"
+                        Margin="5"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+
+</DockPanel>
+</UserControl>

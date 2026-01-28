@@ -1,0 +1,93 @@
+<UserControl x:Class="StockControl.Views.Checkouts.CheckoutHistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <Border Grid.Row="0"
+                Background="#2D2D30"
+                Padding="10"
+                CornerRadius="5"
+                Margin="0,0,0,10">
+            <TextBlock Text="Historial de ventas"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       Foreground="White"/>
+        </Border>
+
+        <!-- Search box + buttons -->
+        <Grid Grid.Row="1"
+              Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Search box -->
+            <Grid Grid.Column="0"
+                  Width="Auto"
+                  Height="30"
+                  Margin="0,0,10,0">
+                <TextBox
+                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                    VerticalContentAlignment="Center"
+                    Loaded="SearchBox_Loaded"/>
+
+                <TextBlock Text="Buscar venta..."
+                           Foreground="Gray"
+                           Margin="5,0,0,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Visibility="{Binding SearchText,
+                                Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}"/>
+            </Grid>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+
+                <Button Content="Detalles"
+                        Width="80"
+                        Height="30"
+                        Margin="0,0,10,0"
+                        Command="{Binding DetailCommand}"
+                        IsEnabled="{Binding CanView}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- List of checkouts -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Checkouts}"
+                  SelectedItem="{Binding SelectedCheckout, Mode=TwoWay}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="N° Comprobante"
+                                    Binding="{Binding ID}"
+                                    Width="*"/>
+                <DataGridTextColumn Header="Date"
+                                    Binding="{Binding Date}"
+                                    Width="Auto"/>
+                <DataGridTextColumn Header="Tipo"
+                                    Binding="{Binding invoiceType,
+                                        Converter={StaticResource EnumDescriptionConverter}}"
+                                    Width="*"/>
+                <DataGridTextColumn Header="Nombre Cliente"
+                                    Binding="{Binding Client.Name}"
+                                    Width="2*"/>
+                <DataGridTextColumn Header="Total"
+                                    Binding="{Binding Total}"
+                                    Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

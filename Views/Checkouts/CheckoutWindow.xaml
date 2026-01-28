@@ -1,0 +1,152 @@
+<Window x:Class="StockControl.Views.Checkouts.CheckoutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Venta"
+        WindowState="Maximized">
+
+<DockPanel>
+
+    <!-- Lateral Menu -->
+    <DockPanel DockPanel.Dock="Right"
+               Width="200"
+               Background="#2D2D30"
+               LastChildFill="True">
+
+        <!-- Bottom button -->
+        <Button DockPanel.Dock="Bottom"
+                Content="Cancelar venta"
+                Command="{Binding CancelCommand}"
+                Margin="10"/>
+
+        <!-- Upper buttons -->
+        <StackPanel>
+            <Button Content="+ Producto"
+                    Command="{Binding AddProductCommand}"
+                    Margin="10"/>
+
+            <Button Content="+ Cliente"
+                    Command="{Binding AddClientCommand}"
+                    Margin="10"/>
+
+            <Separator Margin="10"/>
+        </StackPanel>
+
+    </DockPanel>
+
+    <!-- Principal content -->
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- cliente / búsqueda -->
+            <RowDefinition Height="*"/>     <!-- grilla -->
+            <RowDefinition Height="Auto"/>  <!-- total / acciones -->
+        </Grid.RowDefinitions>
+
+        <!-- Client + Search -->
+        <Grid Grid.Row="0" Margin="0 0 0 10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Client info -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Cliente:"
+                           FontWeight="Bold"
+                           Margin="0 0 5 0"/>
+
+                <TextBlock Text="{Binding ClientFullName}"
+                           Margin="0 0 10 0" Foreground="Gray"/>
+
+                <TextBlock Text="DNI/CUIL:"
+                           FontWeight="Bold"
+                           Margin="0 0 5 0"/>
+
+                <TextBlock Text="{Binding ClientDocument}"
+                           Foreground="Gray"/>
+            </StackPanel>
+            <Grid Grid.Column="1" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="200"/>
+                </Grid.ColumnDefinitions>
+            <TextBlock Text="Tipo de factura:"
+                       FontWeight="Bold"
+                       Margin= "0 0 5 0"/>
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding InvoiceTypes}"
+                      SelectedItem="{Binding SelectedInvoiceType, Mode=TwoWay}" Margin="0,0,10,0">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            </Grid>
+            <!-- input lector -->
+            <Grid Grid.Column="2" VerticalAlignment="Center">
+            <TextBox 
+                    Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
+                    FontSize="16"
+                    Height="36"
+                    VerticalContentAlignment="Center"
+                    Loaded="SearchBox_Loaded"
+                    KeyDown="BarcodeTextBox_KeyDown"/>
+            <TextBlock Text="Buscar producto..."
+                                    Foreground="Gray"
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    IsHitTestVisible="False"
+                                    Visibility="{Binding ProductSearchText,
+                                            Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}"/>
+            </Grid>
+        </Grid>
+
+        <!-- Items -->
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Checkout.Items}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserAddRows="False">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="*"/>
+                <DataGridTextColumn Header="Cant." Binding="{Binding Quantity}" Width="80"/>
+                <DataGridTextColumn Header="Tipo"
+                                    Binding="{Binding Unit,
+                                        Converter={StaticResource EnumDescriptionConverter}}"
+                                    Width="80"/>
+                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice}" Width="100"/>
+                <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <!-- Buttons + Total of sale -->
+        <Grid Grid.Row="2" Margin="0 10 0 0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="{Binding Total, StringFormat=Total: ${0:N2}}"
+                       FontSize="28"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Confirmar"
+                        Command="{Binding ConfirmCheckoutCommand}"
+                        Margin="5"/>
+
+                <Button Content="Ticket"
+                        IsEnabled="False"
+                        Margin="5"/>
+
+                <Button Content="PDF"
+                        IsEnabled="False"
+                        Margin="5"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+
+</DockPanel>
+</Window>
