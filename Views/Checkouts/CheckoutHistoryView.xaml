@@ -82,7 +82,8 @@
                                         Converter={StaticResource EnumDescriptionConverter}}"
                                     Width="*"/>
                 <DataGridTextColumn Header="Nombre Cliente"
-                                    Binding="{Binding Client.Name}"
+                                    Binding="{Binding Client,
+                                        TargetNullValue=Consumidor final}"
                                     Width="2*"/>
                 <DataGridTextColumn Header="Total"
                                     Binding="{Binding Total}"

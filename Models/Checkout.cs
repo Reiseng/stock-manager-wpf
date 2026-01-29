@@ -12,7 +12,7 @@ namespace StockControl.Models
             public InvoiceType invoiceType { get; set; }
             public decimal Total
                 {
-                    get => Items.Sum(i => i.Total);
+                    get => Items.Sum(i => i.Total)*1.21m;
                 }
         }
 }

@@ -16,9 +16,22 @@ namespace StockControl.ViewModels.Clients
         private readonly ClientService _ClientService;
         private readonly ICollectionView _ClientsView;
         private Client? _selectedClient;
+        public Client? SelectedClient
+        {
+            get => _selectedClient;
+            set
+            {
+                _selectedClient = value;
+                OnPropertyChanged();
 
+                EditCommand.RaiseCanExecuteChanged();
+                DeleteCommand.RaiseCanExecuteChanged();
+                ConfirmCommand.RaiseCanExecuteChanged();
+            }
+        }
         public ObservableCollection<Client> Clients { get; }
-
+        public ClientViewMode ViewMode { get; }
+        public Action<Client?>? CloseAction { get; set; }
         private string _searchText;
         public string SearchText
         {
@@ -34,11 +47,15 @@ namespace StockControl.ViewModels.Clients
         public RelayCommand EditCommand { get; }
         public RelayCommand DeleteCommand { get; }
         public RelayCommand AddCommand { get; }
+        public RelayCommand ConfirmCommand { get; }
 
-        public ClientsViewModel(ClientService ClientService)
+        public ClientsViewModel(ClientService ClientService, bool canEditClients)
         {
+            if (canEditClients)
+                ViewMode = ClientViewMode.Editable;
+            else
+                ViewMode = ClientViewMode.SelectOnly;
             _ClientService = ClientService;
-
             Clients = new ObservableCollection<Client>(_ClientService.GetClients());
 
             _ClientsView = CollectionViewSource.GetDefaultView(Clients);
@@ -52,6 +69,10 @@ namespace StockControl.ViewModels.Clients
 
             DeleteCommand = new RelayCommand(
                 _ => DeleteClient(SelectedClient),
+                _ => SelectedClient != null);
+                
+            ConfirmCommand = new RelayCommand(
+                _ => CloseAction?.Invoke(SelectedClient),
                 _ => SelectedClient != null);
         }
         private void LoadClients()
@@ -83,14 +104,18 @@ namespace StockControl.ViewModels.Clients
                 Owner = Application.Current.MainWindow
             };
 
-            vm.ShowSuccessAction = () =>
+            vm.CloseAction = success =>
             {
-                new SuccessWindow
+                if (success)
                 {
-                    Owner = view
-                }.Show();
+                    new SuccessWindow
+                    {
+                        Owner = view
+                    }.ShowDialog();
+                }
+
+                view.Close();
             };
-            vm.CloseAction = () => view.Close();
 
             view.ShowDialog();
 
@@ -115,20 +140,11 @@ namespace StockControl.ViewModels.Clients
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
-        public Client? SelectedClient
-        {
-            get => _selectedClient;
-            set
-            {
-                _selectedClient = value;
-                OnPropertyChanged();
 
-                EditCommand.RaiseCanExecuteChanged();
-                DeleteCommand.RaiseCanExecuteChanged();
-            }
-        }
         private void OpenAddClient()
         {
+            ClientDto? createdClient = null;
+
             var vm = new AddClientViewModel(_ClientService);
             var view = new AddClientWindow
             {
@@ -136,17 +152,33 @@ namespace StockControl.ViewModels.Clients
                 Owner = Application.Current.MainWindow
             };
 
-            vm.ShowSuccessAction = () =>
+            vm.CloseAction = success =>
             {
-                new SuccessWindow
+                if (success)
                 {
-                    Owner = view
-                }.Show();
+                    createdClient = vm.CreatedClient;
+                    new SuccessWindow
+                    {
+                        Owner = view
+                    }.ShowDialog();
+                }
+
+                view.Close();
             };
-            vm.CloseAction = () => view.Close();
+
             view.ShowDialog();
 
-            LoadClients();
+            if (createdClient != null)
+            {
+                LoadClients();
+
+                SelectedClient = Clients.FirstOrDefault(c => c.ID == createdClient.ID);
+             if (ViewMode == ClientViewMode.SelectOnly && SelectedClient != null)
+                {
+                    CloseAction?.Invoke(SelectedClient);
+                }
+            }
+
             _ClientsView.Refresh();
         }
     }

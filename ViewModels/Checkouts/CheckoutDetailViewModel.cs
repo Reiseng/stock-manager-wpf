@@ -29,6 +29,7 @@ namespace StockControl.ViewModels.Checkouts
             ClientDto = Checkout.Client;
             Items = Checkout.Items;
             Date = Checkout.Date;
+            SubTotal = Checkout.SubTotal;
             Total = Checkout.Total;
         }
         private int _id;
@@ -66,6 +67,12 @@ namespace StockControl.ViewModels.Checkouts
         {
             get => _total;
             set {_total = value;}
+        }
+        private decimal _subtotal;
+        public decimal SubTotal
+        {
+            get => _subtotal;
+            set {_subtotal = value;}
         }
     }
 

@@ -58,19 +58,33 @@
                         Margin="0,0,10,0"
                         Command="{Binding AddCommand}"/>
 
-                <Button Content="Editar"
-                        Width="80"
-                        Height="30"
-                        Margin="0,0,10,0"
-                        Command="{Binding EditCommand}"
-                        IsEnabled="{Binding CanEditOrDelete}"/>
-
-                <Button Content="Eliminar"
-                        Width="80"
-                        Height="30"
-                        Margin="0,0,10,0"
-                        Command="{Binding DeleteCommand}"
-                        IsEnabled="{Binding CanEditOrDelete}"/>
+            <Button Content="Editar"
+                    Width="80"
+                    Height="30"
+                    Margin="0,0,10,0"
+                    Command="{Binding EditCommand}"
+                    IsEnabled="{Binding CanEditClients}"
+                    Visibility="{Binding ViewMode,
+                                        Converter={StaticResource ModeToVisibilityConverter},
+                                        ConverterParameter=Editable}"/>
+            <Button Content="Eliminar"
+                    Width="80"
+                    Height="30"
+                    Margin="0,0,10,0"
+                    Command="{Binding DeleteCommand}"
+                    IsEnabled="{Binding CanEditClients}"
+                    Visibility="{Binding ViewMode,
+                                        Converter={StaticResource ModeToVisibilityConverter},
+                                        ConverterParameter=Editable}"/>
+            <Button Content="Seleccionar"
+                    Width="80"
+                    Height="30"
+                    Margin="0,0,10,0"
+                    Command="{Binding ConfirmCommand}"
+                    IsEnabled="{Binding CanEditClients}"
+                    Visibility="{Binding ViewMode,
+                                        Converter={StaticResource ModeToVisibilityConverter},
+                                        ConverterParameter=SelectOnly}" />
             </StackPanel>
         </Grid>
 

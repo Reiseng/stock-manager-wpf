@@ -14,10 +14,9 @@ namespace StockControl.ViewModels.Clients
         private readonly ClientDto clientDto;
         public bool IsEditMode { get; private set; }
         public string Title => IsEditMode ? "Editar cliente" : "Agregar cliente";
-
+        public ClientDto? CreatedClient { get; private set; }
         public Action? ShowSuccessAction { get; set; }
-
-        public Action? CloseAction { get; set; }
+        public Action<bool>? CloseAction;
         private bool _isSuccess;
         public bool IsSuccess
         {
@@ -31,7 +30,7 @@ namespace StockControl.ViewModels.Clients
             clientDto = new ClientDto();
             IsEditMode = false;
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
-            CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
+            CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
         }
         // EDITAR
         public AddClientViewModel(ClientService ClientService, ClientDto Client)
@@ -116,12 +115,13 @@ private void Save()
     else
     {
         _ClientService.AddClient(clientDto);
+        CreatedClient = ClientDto.FromModel(_ClientService.GetClientByDni(clientDto.Dni));
     }
-
+    
     ShowSuccessAction?.Invoke();
                 Task.Delay(600).ContinueWith(_ =>
                     Application.Current.Dispatcher.Invoke(() =>
-                        CloseAction?.Invoke()));
+                        CloseAction?.Invoke(true)));
 }
 
         private bool CanSave()

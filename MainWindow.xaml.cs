@@ -7,8 +7,6 @@ namespace StockControl.Views
         public MainWindow()
         {
             InitializeComponent();
-            // El DataContext ya lo pusimos en XAML, así que ni siquiera hace falta ponerlo aquí.
-            // DataContext = new MainWindowViewModel();
         }
 
     }

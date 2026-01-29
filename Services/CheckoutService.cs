@@ -88,12 +88,17 @@ namespace StockControl.Services
         }
         public void ConfirmCheckout()
         {
-            bool requiresClient = false;
             if (_currentCheckout.Items.Count == 0)
                 throw new Exception("El carrito está vacío");
 
-            if (requiresClient && _currentCheckout.Client == null){
-                throw new Exception("Debe seleccionar un cliente");}
+            if (_currentCheckout.invoiceType == InvoiceType.AFacture ||
+                _currentCheckout.invoiceType == InvoiceType.BFacture)
+            {
+                if (_currentCheckout.Client == null)
+                {
+                    throw new Exception("Debe seleccionar un cliente para este tipo de factura");
+                }
+            }
             else if (_currentCheckout.Client == null)
             {
                 _currentCheckout.Client = new Client
@@ -101,7 +106,6 @@ namespace StockControl.Services
                     Name = "Consumidor Final"
                 };
             }
-
             foreach (var item in _currentCheckout.Items)
             {
                 if (item.product.Stock < item.Quantity)

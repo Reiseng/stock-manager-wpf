@@ -24,7 +24,11 @@ namespace StockControl.Data
         }
         public void Add(Client client)
         {   
-            client.ID = clients.Count()+1;
+            if (clients.Count < 1)
+                client.ID = 1;
+            else
+                client.ID = clients.Count()+1;
+            
             clients.Add(client);
         }
         public void Remove(Client client)

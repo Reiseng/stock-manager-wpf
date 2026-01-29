@@ -16,7 +16,6 @@ namespace StockControl.ViewModels.Checkouts
         private Checkout? _selectedCheckout;
 
         public ObservableCollection<Checkout> Checkouts { get; }
-
         private string _searchText;
         public string SearchText
         {
@@ -28,7 +27,17 @@ namespace StockControl.ViewModels.Checkouts
                 _checkoutView.Refresh();
             }
         }
+        public Checkout? SelectedCheckout
+        {
+            get => _selectedCheckout;
+            set
+            {
+                _selectedCheckout = value;
+                OnPropertyChanged();
 
+                DetailCommand.RaiseCanExecuteChanged();
+            }
+        }
         public RelayCommand DetailCommand { get; }
 
         public CheckoutsHistoryViewModel(CheckoutService checkoutService)
@@ -67,17 +76,7 @@ namespace StockControl.ViewModels.Checkouts
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
-        public Checkout? SelectedCheckout
-        {
-            get => _selectedCheckout;
-            set
-            {
-                _selectedCheckout = value;
-                OnPropertyChanged();
 
-                DetailCommand.RaiseCanExecuteChanged();
-            }
-        }
         private void OpenCheckoutDetail(Checkout _checkout)
         {
             CheckoutDto checkoutDto = CheckoutDto.FromModel(_checkout);

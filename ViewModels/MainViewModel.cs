@@ -56,7 +56,7 @@ namespace StockControl.ViewModels
             {
                 CurrentView = new ClientView
                 {
-                    DataContext = new ClientsViewModel(AppServices.ClientService)
+                    DataContext = new ClientsViewModel(AppServices.ClientService, canEditClients: true)
                 };
             });
             ShowCheckoutHistoryCommand = new RelayCommand(_ =>

@@ -59,7 +59,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Text="{Binding Total, StringFormat=Total: ${0:N2}}"
+            <TextBlock Text="{Binding Total, StringFormat=Total+IVA: ${0:N2}}"
                        FontSize="28"
                        FontWeight="Bold"
                        VerticalAlignment="Center"/>

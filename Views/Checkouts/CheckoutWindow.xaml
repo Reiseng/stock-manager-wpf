@@ -123,16 +123,23 @@
         <!-- Buttons + Total of sale -->
         <Grid Grid.Row="2" Margin="0 10 0 0">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Text="{Binding Total, StringFormat=Total: ${0:N2}}"
-                       FontSize="28"
+            <TextBlock Grid.Column="0" Text="{Binding SubTotal, StringFormat=SubTotal: ${0:N2}}"
+                       FontSize="20"
                        FontWeight="Bold"
-                       VerticalAlignment="Center"/>
-
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                       VerticalAlignment="Center"
+                       Margin="0,0,10,0"
+                       Foreground="Gray"/>
+            <TextBlock Grid.Column="1" Text="{Binding Total, StringFormat=Total+IVA: ${0:N2}}"
+                                FontSize="24"
+                                FontWeight="Bold"
+                                VerticalAlignment="Center"
+                                Margin="0,0,10,0"/>
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
                 <Button Content="Confirmar"
                         Command="{Binding ConfirmCheckoutCommand}"
                         Margin="5"/>

@@ -7,6 +7,8 @@
     <local:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
     <local:StringNullOrEmptyToVisibilityConverter
         x:Key="StringNullOrEmptyToVisibilityConverter"/>
+    <local:ModeToVisibilityConverter
+        x:Key="ModeToVisibilityConverter"/>
     <!-- Button Style -->
     <Style TargetType="Button">
         <Setter Property="Width" Value="Auto"/>

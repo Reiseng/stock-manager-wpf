@@ -46,6 +46,7 @@ namespace StockControl.ViewModels.Checkouts
                 _checkout = value;
                 OnPropertyChanged(nameof(Checkout));
                 OnPropertyChanged(nameof(Total));
+                OnPropertyChanged(nameof(SubTotal));
                 OnPropertyChanged(nameof(ClientFullName));
                 OnPropertyChanged(nameof(ClientDocument));
             }
@@ -73,10 +74,10 @@ namespace StockControl.ViewModels.Checkouts
         }
         public RelayCommand AddProductCommand { get; }
         public RelayCommand AddClientCommand { get; }
-        public RelayCommand ShowClientListCommand { get; }
         public RelayCommand ConfirmCheckoutCommand { get; }
 
 
+        public decimal SubTotal => Checkout?.SubTotal ?? 0;
         public decimal Total => Checkout?.Total ?? 0;
 
         public CheckoutViewModel(CheckoutService checkoutService)
@@ -108,15 +109,28 @@ namespace StockControl.ViewModels.Checkouts
                 Checkout.Items.Add(CheckoutItemDto.FromModel(item));
 
             OnPropertyChanged(nameof(Total));
+            OnPropertyChanged(nameof(SubTotal));
             ConfirmCheckoutCommand.RaiseCanExecuteChanged();
         }
         private void ConfirmCheckout()
         {
             try
             {
+
                 _checkoutService.SetInvoiceType(Checkout.InvoiceType);
+                if (Checkout.Client != null)
+                {
+                    var client = AppServices.ClientService.GetClientByID(Checkout.Client.ID);
+                    if (client != null)
+                    {
+                        _checkoutService.SetClient(client);
+                    }
+                }
                 _checkoutService.ConfirmCheckout();
+                Checkout = null;
                 LoadCheckout();
+                OnPropertyChanged(nameof(ClientFullName));
+                OnPropertyChanged(nameof(ClientDocument));
             }
             catch (Exception ex)
             {
@@ -128,22 +142,39 @@ namespace StockControl.ViewModels.Checkouts
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));}
         private void OpenAddClient()
         {
-            var vm = new AddClientViewModel(AppServices.ClientService);
-            var view = new AddClientWindow
+            Client? selectedClient = null;
+
+            var vm = new ClientsViewModel(
+                AppServices.ClientService,
+                canEditClients: false
+            );
+
+            var view = new ClientWindow
             {
                 DataContext = vm,
                 Owner = Application.Current.MainWindow
             };
 
-            vm.ShowSuccessAction = () =>
+            vm.CloseAction = SelectedClient =>
             {
+                selectedClient = vm.SelectedClient;
                 new SuccessWindow
                 {
                     Owner = view
-                }.Show();
+                }.ShowDialog();
+
+                view.Close();
             };
-            vm.CloseAction = () => view.Close();
+
             view.ShowDialog();
+            ClientDto? selectedClientDto = ClientDto.FromModel(selectedClient);
+            if (selectedClient != null)
+            {
+                _checkout.Client = selectedClientDto;
+            }
+                OnPropertyChanged(nameof(Checkout));
+                OnPropertyChanged(nameof(ClientFullName));
+                OnPropertyChanged(nameof(ClientDocument));
         }
         private void OpenAddProduct()
         {

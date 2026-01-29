@@ -11,6 +11,5 @@ public enum InvoiceType
     BFacture,
     [Description("Factura C")]
     CFacture
-
 }
 }

@@ -26,7 +26,8 @@ public class CheckoutDto
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public decimal Total => Items.Sum(i => i.Total);
+        public decimal SubTotal => Items.Sum(i => i.Total);
+        public decimal Total => Items.Sum(i => i.Total)*1.21m;
     public static CheckoutDto FromModel(Checkout checkout)
     {
         return new CheckoutDto
