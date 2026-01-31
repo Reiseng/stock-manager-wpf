@@ -139,6 +139,9 @@ namespace StockControl.ViewModels.Checkouts
                     {
                         _checkoutService.SetClient(client);
                     }
+                }else
+                {
+                    _checkoutService.SetClient(AppServices.ClientService.GetFinalConsumer());
                 }
                 _checkoutService.ConfirmCheckout();
                 Checkout = null;

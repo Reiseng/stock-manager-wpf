@@ -59,6 +59,8 @@ namespace StockControl.Services{
                 throw new Exception("Id inválido");
 
             var client = _repository.GetByID(id);
+            if (client.Dni == "00000000")
+                throw new InvalidOperationException("No se puede eliminar Consumidor Final");
             if (client == null)
                 throw new Exception("El cliente no existe");
 
@@ -88,6 +90,23 @@ namespace StockControl.Services{
                 client.Address = _client.Address;
 
             _repository.Update(client);
+        }
+        public Client GetFinalConsumer()
+        {
+            var client = _repository.GetByDni("00000000");
+            if (client != null)
+                return client;
+
+            // if don't exist, create it
+            client = new Client
+            {
+                Dni = "00000000",
+                Name = "Consumidor",
+                LastName = "Final",
+            };
+
+            _repository.Add(client);
+            return _repository.GetByDni("00000000")!;
         }
     }
 

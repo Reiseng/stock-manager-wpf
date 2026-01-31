@@ -37,7 +37,9 @@ public partial class App : Application
             AppServices.ClientService =
                 new ClientService(AppServices.ClientPersistence);
             AppServices.CheckoutPersistence =
-                new CheckoutPersistence(AppServices.DatabaseContext);
+                new CheckoutPersistence(AppServices.DatabaseContext, 
+                    AppServices.ClientService, 
+                    AppServices.ProductService);
             AppServices.CheckoutService =
                 new CheckoutService(AppServices.CheckoutPersistence);
             }

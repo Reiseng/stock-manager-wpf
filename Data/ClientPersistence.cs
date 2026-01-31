@@ -12,8 +12,6 @@ namespace StockControl.Data
         {
             db = dbContext;
         }
-        private readonly List<Client> clients = new();
-
         public List<Client> GetAll()
         {
             var clients = new List<Client>();

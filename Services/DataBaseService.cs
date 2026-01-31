@@ -29,7 +29,11 @@ namespace StockControl.Services.Database
                     Phone TEXT,
                     Address TEXT
                 );
-
+                INSERT INTO Clients (Dni, Name, LastName, Email, Phone, Address)
+                SELECT '00000000', 'Consumidor', 'Final', NULL, NULL, NULL
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM Clients WHERE Dni = '00000000'
+                );
                 CREATE TABLE IF NOT EXISTS Products (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Barcode TEXT NOT NULL UNIQUE,

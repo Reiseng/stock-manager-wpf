@@ -13,8 +13,6 @@ public class ProductPersistence
     {
         db = dbContext;
     }
-    private readonly List<Product> products = new();
-
     public List<Product> GetAll()
     {
         var products = new List<Product>();

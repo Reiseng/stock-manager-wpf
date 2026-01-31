@@ -10,9 +10,15 @@ namespace StockControl.Models
             public List<CheckoutItem> Items { get; set; } = new();
             public DateTime Date { get; set; }
             public InvoiceType invoiceType { get; set; }
-            public decimal Total
-                {
-                    get => Items.Sum(i => i.Total)*1.21m;
-                }
+            public decimal Total {get; set;}
+            public Checkout(Client? client, List<CheckoutItem> items, InvoiceType invoiceType, DateTime date, decimal total)
+            {
+                Client = client;
+                Items = items;
+                this.invoiceType = invoiceType;
+                Date = date;
+                Total = total;
+            }
+            public Checkout() { }
         }
 }

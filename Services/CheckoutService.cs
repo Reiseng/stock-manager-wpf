@@ -6,6 +6,7 @@ namespace StockControl.Services
 {
     public class CheckoutService
     {
+        private const decimal taxes = 1.21m;
         private Checkout _currentCheckout;
         private readonly CheckoutPersistence _repository;
         ProductService productService;
@@ -121,7 +122,7 @@ namespace StockControl.Services
                     item.Quantity
                 );
             }
-
+            _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total)*taxes;
             _repository.Add(_currentCheckout);
 
             StartCheckout();
