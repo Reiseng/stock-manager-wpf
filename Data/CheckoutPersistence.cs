@@ -1,11 +1,17 @@
 // Checkout is handled in memory to keep the project simple and focused on core logic.
 // This can be replaced with persistence later (DB or file storage).
+using StockControl.Config.DataBaseConfig;
 using StockControl.Models;
 
 namespace StockControl.Data
 {
     public class CheckoutPersistence
     {
+        private readonly DatabaseContext db;
+        public CheckoutPersistence(DatabaseContext dbContext)
+        {
+            db = dbContext;
+        }
         private readonly List<Checkout> checkouts = new();
 
         public IReadOnlyList<Checkout> GetAll()

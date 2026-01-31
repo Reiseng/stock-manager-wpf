@@ -43,7 +43,7 @@ namespace StockControl.Services
                 throw new Exception("Producto inválido");
 
             if (product.Unit == UnitType.Unit && quantity % 1 != 0)
-                throw new Exception("Este producto se vende por unidad");
+                throw new Exception("Este producto no se vende por unidad");
 
             var item = _currentCheckout.Items
                 .FirstOrDefault(i => i.product.Id == product.Id);

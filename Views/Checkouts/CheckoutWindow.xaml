@@ -106,18 +106,29 @@
         <DataGrid Grid.Row="1"
                   ItemsSource="{Binding Checkout.Items}"
                   AutoGenerateColumns="False"
-                  IsReadOnly="True"
                   CanUserAddRows="False">
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="*"/>
-                <DataGridTextColumn Header="Cant." Binding="{Binding Quantity}" Width="80"/>
+                <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Cant." Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="80" IsReadOnly="False"/>
                 <DataGridTextColumn Header="Tipo"
                                     Binding="{Binding Unit,
                                         Converter={StaticResource EnumDescriptionConverter}}"
-                                    Width="80"/>
-                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice}" Width="100"/>
-                <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="100"/>
+                                    Width="80" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="100" IsReadOnly="True"/>
+                <DataGridTemplateColumn Header="Acciones" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="x"
+                                        Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        Height="20" Width="20" Margin="5,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
         <!-- Buttons + Total of sale -->

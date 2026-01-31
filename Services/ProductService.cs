@@ -1,4 +1,5 @@
 using StockControl.Data;
+using StockControl.Enums;
 using StockControl.Models;
 
 namespace StockControl.Services
@@ -55,8 +56,7 @@ namespace StockControl.Services
                 throw new Exception("Ya existe un producto con ese código");
             if (_product.Price <= 0)
                 throw new Exception("Precio inválido");
-
-            var product = new Product(_product.Barcode, _product.Brand, _product.Name, _product.Stock.Value, _product.Price.Value, _product.Unit.Value);
+            var product = new Product(_product.Barcode, _product.Brand, _product.Name, _product.Price.Value, _product.Stock.Value, (UnitType)_product.Unit!.Value, true);
             _repository.Add(product);
         }
         public void UpdateProduct(ProductDto _product)
@@ -115,7 +115,7 @@ namespace StockControl.Services
             // Reduce stock only after validating availability to avoid negative values
             if (product.Stock < quantity)
                 throw new Exception("Stock insuficiente");
-            _repository.UpdateStock(id, -quantity);
+            _repository.UpdateStock(id, product.Stock - quantity);
         }
         // Intended for business operations such as returns or credit notes
         public void IncreaseStock(int id, decimal quantity)
@@ -131,7 +131,7 @@ namespace StockControl.Services
             if (product == null)
                 throw new Exception("Producto no encontrado");
 
-            _repository.UpdateStock(id, quantity);
+            _repository.UpdateStock(id, product.Stock + quantity);
         }
     }
 }

@@ -75,7 +75,7 @@ namespace StockControl.ViewModels.Checkouts
         public RelayCommand AddProductCommand { get; }
         public RelayCommand AddClientCommand { get; }
         public RelayCommand ConfirmCheckoutCommand { get; }
-
+        public RelayCommand RemoveItemCommand { get; }
 
         public decimal SubTotal => Checkout?.SubTotal ?? 0;
         public decimal Total => Checkout?.Total ?? 0;
@@ -90,16 +90,31 @@ namespace StockControl.ViewModels.Checkouts
             );
             AddClientCommand = new RelayCommand(_ => OpenAddClient());
             AddProductCommand = new RelayCommand(_ => OpenAddProduct());
+            RemoveItemCommand = new RelayCommand(item => RemoveItem((CheckoutItemDto)item));
             LoadCheckout();
         }
-
+        private void RemoveItem(CheckoutItemDto item)
+        {
+            if (item != null)
+            {
+                Checkout.Items.Remove(item);
+                CheckoutItem? modelItem = _checkoutService.GetCurrentCheckout().Items
+                    .FirstOrDefault(i => i.product.Id == item.ProductId);
+                if (modelItem != null)
+                {
+                    _checkoutService.RemoveProduct(modelItem);
+                }
+                OnPropertyChanged(nameof(Total));
+                OnPropertyChanged(nameof(SubTotal));
+            }
+        }
         private void LoadCheckout()
         {
             var checkout = _checkoutService.GetCurrentCheckout();
 
             if (Checkout == null)
             {
-            Checkout = CheckoutDto.FromModel(checkout);
+                Checkout = CheckoutDto.FromModel(checkout);
                 return;
             }
 
@@ -116,7 +131,6 @@ namespace StockControl.ViewModels.Checkouts
         {
             try
             {
-
                 _checkoutService.SetInvoiceType(Checkout.InvoiceType);
                 if (Checkout.Client != null)
                 {

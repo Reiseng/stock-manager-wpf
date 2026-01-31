@@ -1,13 +1,46 @@
-﻿using System.Configuration;
-using System.Data;
+﻿using System.IO;
 using System.Windows;
+using StockControl.Config.DataBaseConfig;
+using StockControl.Data;
+using StockControl.Services;
+using StockControl.Services.Database;
 
 namespace StockControl;
 
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
 public partial class App : Application
 {
+    protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+
+            var dbPath = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Databases",
+                "app.db"
+            );
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+
+            var connectionString = $"Data Source={dbPath}";
+
+            AppServices.DatabaseContext = new DatabaseContext(connectionString);
+            var dbInitializer = new DatabaseInitializer(AppServices.DatabaseContext);
+            dbInitializer.Initialize();
+
+            AppServices.ProductPersistence =
+                new ProductPersistence(AppServices.DatabaseContext);
+
+            AppServices.ProductService =
+                new ProductService(AppServices.ProductPersistence);
+            AppServices.ClientPersistence =
+                new ClientPersistence(AppServices.DatabaseContext);
+            AppServices.ClientService =
+                new ClientService(AppServices.ClientPersistence);
+            AppServices.CheckoutPersistence =
+                new CheckoutPersistence(AppServices.DatabaseContext);
+            AppServices.CheckoutService =
+                new CheckoutService(AppServices.CheckoutPersistence);
+            }
+
 }
 

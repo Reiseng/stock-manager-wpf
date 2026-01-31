@@ -1,3 +1,4 @@
+using System.ComponentModel.Design;
 using StockControl.Enums;
 namespace StockControl.Models
 {
@@ -10,19 +11,21 @@ namespace StockControl.Models
     public decimal Stock { get; set; }
     public decimal Price { get; set; }
     public UnitType Unit { get; set; }
+    public bool IsActive { get; set; } = true;
 
 
     public override string ToString()
         => $"{Name} ({Stock}) - ${Price}";
 
-        public Product(string barcode, string brand, string name, decimal stock, decimal price, UnitType unitType)
+        public Product(string barcode, string brand, string name, decimal price, decimal stock, UnitType unitType, bool isActive = true)
         {
             Barcode = barcode;
             Brand = brand;
             Name = name;
-            Stock = stock;
             Price = price;
+            Stock = stock;
             Unit = unitType;
+            IsActive = isActive;
         }
 }
 }

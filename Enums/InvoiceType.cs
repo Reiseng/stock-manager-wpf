@@ -4,12 +4,15 @@ namespace StockControl.Enums{
 public enum InvoiceType
 {
     [Description("Consumidor Final")]
-    FinalConsumer,
+    FinalConsumer = 0,
+
     [Description("Factura A")]
-    AFacture,
+    AFacture = 1,
+
     [Description("Factura B")]
-    BFacture,
+    BFacture = 2,
+
     [Description("Factura C")]
-    CFacture
+    CFacture = 3
 }
 }

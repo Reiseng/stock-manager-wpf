@@ -4,13 +4,12 @@ namespace StockControl.Enums{
 public enum UnitType
 {
     [Description("Unidad")]
-    Unit,
+    Unit = 0,
     [Description("Kilogramos")]
-    Kg,
+    Kg = 1,
     [Description("Litros")]
-    Liter,
+    Liter = 2,
     [Description("Caja")]
-    Box
-
+    Box = 3
 }
 }

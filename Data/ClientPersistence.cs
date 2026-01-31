@@ -1,11 +1,17 @@
 // Client is handled in memory to keep the project simple and focused on core logic.
 // This can be replaced with persistence later (DB or file storage).
+using StockControl.Config.DataBaseConfig;
 using StockControl.Models;
 
 namespace StockControl.Data
 {
     public class ClientPersistence
     {
+        private readonly DatabaseContext db;
+        public ClientPersistence(DatabaseContext dbContext)
+        {
+            db = dbContext;
+        }
         private readonly List<Client> clients = new();
 
         public IReadOnlyList<Client> GetAll()
