@@ -1,7 +1,6 @@
 // Products is handled in memory to keep the project simple and focused on core logic.
 // This can be replaced with persistence later (DB or file storage).
 using StockControl.Models;
-using Microsoft.Data.Sqlite;
 using StockControl.Enums;
 using StockControl.Config.DataBaseConfig;
 

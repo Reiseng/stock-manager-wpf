@@ -50,7 +50,7 @@ namespace StockControl.Services{
             if (_repository.GetByDni(clientDto.Dni) != null)
                 throw new Exception("Usuario ya registrado");
 
-            var client = new Client(clientDto.Dni, clientDto.Name, clientDto.LastName, clientDto.Email, clientDto.Phone, clientDto.Address);
+            var client = new Client(clientDto.Dni, clientDto.Name, clientDto.LastName, clientDto.Phone, clientDto.Email, clientDto.Address);
             _repository.Add(client);
         }
         public void RemoveClient(int id)
