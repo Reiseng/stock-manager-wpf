@@ -95,17 +95,23 @@ namespace StockControl.ViewModels.Checkouts
         }
         private void RemoveItem(CheckoutItemDto item)
         {
-            if (item != null)
-            {
-                Checkout.Items.Remove(item);
-                CheckoutItem? modelItem = _checkoutService.GetCurrentCheckout().Items
-                    .FirstOrDefault(i => i.product.Id == item.ProductId);
-                if (modelItem != null)
+            try{
+                if (item != null)
                 {
-                    _checkoutService.RemoveProduct(modelItem);
+                    Checkout.Items.Remove(item);
+                    CheckoutItem? modelItem = _checkoutService.GetCurrentCheckout().Items
+                        .FirstOrDefault(i => i.product.Id == item.ProductId);
+                    if (modelItem != null)
+                    {
+                        _checkoutService.RemoveProduct(modelItem);
+                    }
+                    OnPropertyChanged(nameof(Total));
+                    OnPropertyChanged(nameof(SubTotal));
                 }
-                OnPropertyChanged(nameof(Total));
-                OnPropertyChanged(nameof(SubTotal));
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
         private void LoadCheckout()

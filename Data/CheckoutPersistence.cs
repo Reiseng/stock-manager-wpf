@@ -18,7 +18,6 @@ namespace StockControl.Data
             clientService = ClientService;
             productService = ProductService;
         }
-        private readonly List<Checkout> checkouts = new();
 
         public List<Checkout> GetAll()
         {
@@ -64,7 +63,7 @@ namespace StockControl.Data
             while (reader.Read())
             {
                 int checkoutId = reader.GetInt32(0);
-                Client client = clientService.GetClientByID(reader.GetInt32(1));
+                Client client = clientService.GetClientByIDAnyState(reader.GetInt32(1));
                 var checkout = new Checkout(
                     client,
                     itemsByCheckout.ContainsKey(checkoutId)
@@ -125,7 +124,7 @@ namespace StockControl.Data
                 while (reader.Read())
                 {
                     int checkoutId = reader.GetInt32(0);
-                    Client client = clientService.GetClientByID(reader.GetInt32(1));
+                    Client client = clientService.GetClientByIDAnyState(reader.GetInt32(1));
                     var checkout = new Checkout(
                         client,
                         itemsByCheckout.ContainsKey(checkoutId)

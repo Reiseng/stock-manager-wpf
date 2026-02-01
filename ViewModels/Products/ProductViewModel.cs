@@ -115,18 +115,22 @@ namespace StockControl.ViewModels.Products
         }
         private void DeleteProduct(object parameter)
         {
-            if (parameter is not Product product)
-                return;
-            if (MessageBox.Show(
-                $"¿Eliminar {product.Name}?",
-                "Confirmar",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning) != MessageBoxResult.Yes)
-                return;
-            _productService.RemoveProduct(product.Id);
-            Products.Remove(product);
+            try{
+                if (parameter is not Product product)
+                    return;
+                if (MessageBox.Show(
+                    $"¿Eliminar {product.Name}?",
+                    "Confirmar",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    return;
+                _productService.RemoveProduct(product.Id);
+                Products.Remove(product);
+            }
+            catch(Exception ex){
+                MessageBox.Show(ex.Message);
+            }
         }
-
         private void OpenAddProduct()
         {
             var vm = new AddProductViewModel(AppServices.ProductService);

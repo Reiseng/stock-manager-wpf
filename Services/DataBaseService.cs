@@ -27,10 +27,11 @@ namespace StockControl.Services.Database
                     LastName TEXT NOT NULL,
                     Email TEXT,
                     Phone TEXT,
-                    Address TEXT
+                    Address TEXT,
+                    IsActive INTEGER NOT NULL DEFAULT 1
                 );
-                INSERT INTO Clients (Dni, Name, LastName, Email, Phone, Address)
-                SELECT '00000000', 'Consumidor', 'Final', NULL, NULL, NULL
+                INSERT INTO Clients (Dni, Name, LastName, Email, Phone, Address, IsActive)
+                SELECT '00000000', 'Consumidor', 'Final', NULL, NULL, NULL, 1
                 WHERE NOT EXISTS (
                     SELECT 1 FROM Clients WHERE Dni = '00000000'
                 );

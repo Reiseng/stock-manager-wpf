@@ -22,7 +22,7 @@ public class ProductPersistence
             using var command = connection.CreateCommand();
             command.CommandText = @"
                 SELECT Id, Barcode, Name, Brand, Price, Stock, Unit, IsActive
-                FROM Products;
+                FROM Products WHERE IsActive = 1;
                 ";
 
             using var reader = command.ExecuteReader();
@@ -50,7 +50,7 @@ public class ProductPersistence
             command.CommandText = @"
                 SELECT Id, Barcode, Name, Brand, Price, Stock, Unit, IsActive
                 FROM Products
-                WHERE Id = @id;
+                WHERE Id = @id AND IsActive = 1;
                 ";
             command.Parameters.AddWithValue("@id", id);
             using var reader = command.ExecuteReader();
@@ -71,6 +71,34 @@ public class ProductPersistence
             return null;
         }
     public Product? GetByBarcode(string barcode)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT Id, Barcode, Name, Brand, Price, Stock, Unit, IsActive
+                FROM Products
+                WHERE Barcode = @barcode AND IsActive = 1;
+                ";
+            command.Parameters.AddWithValue("@barcode", barcode);
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                var product = new Product(
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.GetDecimal(4),
+                    reader.GetDecimal(5),
+                    (UnitType)reader.GetInt32(6),
+                    reader.GetBoolean(7)
+                );
+                product.Id = reader.GetInt32(0);
+                return product;
+            }
+            return null;
+        }
+    public Product? GetByBarcodeAnyState(string barcode)
         {
             using var connection = db.CreateConnection();
             connection.Open();
@@ -124,7 +152,8 @@ public class ProductPersistence
 
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                DELETE FROM Products
+                UPDATE Products
+                SET IsActive = 0
                 WHERE Id = @id;
                 ";
             command.Parameters.AddWithValue("@id", product.Id);

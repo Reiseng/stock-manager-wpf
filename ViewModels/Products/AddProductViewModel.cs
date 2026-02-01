@@ -107,25 +107,31 @@ namespace StockControl.ViewModels.Products
 
 private void Save()
 {
+    try{
         _Product.Name = Name;
         _Product.Brand = Brand;
         _Product.Barcode = Barcode;
         _Product.Price = Price;
         _Product.Stock = Stock;
         _Product.Unit = SelectedUnitType;
-    if (IsEditMode)
-    {
-        _productService.UpdateProduct(_Product);
-    }
-    else
-    {
-        _productService.AddProduct(_Product);
-    }
+        if (IsEditMode)
+        {
+            _productService.UpdateProduct(_Product);
+        }
+        else
+        {
+            _productService.AddProduct(_Product);
+        }
 
-    ShowSuccessAction?.Invoke();
-                Task.Delay(600).ContinueWith(_ =>
-                    Application.Current.Dispatcher.Invoke(() =>
-                        CloseAction?.Invoke()));
+        ShowSuccessAction?.Invoke();
+                    Task.Delay(600).ContinueWith(_ =>
+                        Application.Current.Dispatcher.Invoke(() =>
+                            CloseAction?.Invoke()));
+        }
+    catch(Exception ex)
+        {
+            MessageBox.Show(ex.Message);
+        }
 }
 
         private bool CanSave()

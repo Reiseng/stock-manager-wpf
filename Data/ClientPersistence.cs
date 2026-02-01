@@ -20,7 +20,7 @@ namespace StockControl.Data
             using var command = connection.CreateCommand();
             command.CommandText = @"
                 SELECT ID, Dni, Name, LastName, Phone, Email, Address
-                FROM Clients;
+                FROM Clients WHERE IsActive = 1;
                 ";
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -31,7 +31,8 @@ namespace StockControl.Data
                     reader.GetString(3),
                     reader.IsDBNull(4) ? null : reader.GetString(4),
                     reader.IsDBNull(5) ? null : reader.GetString(5),
-                    reader.IsDBNull(6) ? null : reader.GetString(6)
+                    reader.IsDBNull(6) ? null : reader.GetString(6),
+                    true
                 );
                 client.ID = reader.GetInt32(0);
                 clients.Add(client);
@@ -40,6 +41,34 @@ namespace StockControl.Data
         }
 
         public Client? GetByDni(string dni)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT ID, Dni, Name, LastName, Phone, Email, Address
+                FROM Clients
+                WHERE Dni = @dni AND IsActive = 1;
+                ";
+            command.Parameters.AddWithValue("@dni", dni);
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                var client = new Client(
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.IsDBNull(4) ? null : reader.GetString(4),
+                    reader.IsDBNull(5) ? null : reader.GetString(5),
+                    reader.IsDBNull(6) ? null : reader.GetString(6),
+                    true
+                );
+                client.ID = reader.GetInt32(0);
+                return client;
+            }
+            return null;
+        }
+        public Client? GetByDniAnyState(string dni)
         {
             using var connection = db.CreateConnection();
             connection.Open();
@@ -59,15 +88,43 @@ namespace StockControl.Data
                     reader.GetString(3),
                     reader.IsDBNull(4) ? null : reader.GetString(4),
                     reader.IsDBNull(5) ? null : reader.GetString(5),
-                    reader.IsDBNull(6) ? null : reader.GetString(6)
+                    reader.IsDBNull(6) ? null : reader.GetString(6),
+                    reader.GetInt32(7) == 1 ? true : false
                 );
                 client.ID = reader.GetInt32(0);
                 return client;
             }
             return null;
         }
-
         public Client? GetByID(int id)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT ID, Dni, Name, LastName, Phone, Email, Address
+                FROM Clients
+                WHERE ID = @id AND IsActive = 1;
+                ";
+            command.Parameters.AddWithValue("@id", id);
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                var client = new Client(
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.IsDBNull(4) ? null : reader.GetString(4),
+                    reader.IsDBNull(5) ? null : reader.GetString(5),
+                    reader.IsDBNull(6) ? null : reader.GetString(6),
+                    true
+                );
+                client.ID = reader.GetInt32(0);
+                return client;
+            }
+            return null;
+        }
+        public Client? GetByIDAnyState(int id)
         {
             using var connection = db.CreateConnection();
             connection.Open();
@@ -87,7 +144,8 @@ namespace StockControl.Data
                     reader.GetString(3),
                     reader.IsDBNull(4) ? null : reader.GetString(4),
                     reader.IsDBNull(5) ? null : reader.GetString(5),
-                    reader.IsDBNull(6) ? null : reader.GetString(6)
+                    reader.IsDBNull(6) ? null : reader.GetString(6),
+                    true
                 );
                 client.ID = reader.GetInt32(0);
                 return client;
@@ -100,8 +158,8 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO Clients (Dni, Name, LastName, Phone, Email, Address)
-                VALUES (@dni, @name, @lastName, @phone, @email, @address);
+                INSERT INTO Clients (Dni, Name, LastName, Phone, Email, Address, IsActive)
+                VALUES (@dni, @name, @lastName, @phone, @email, @address, @isActive);
                 ";
             command.Parameters.AddWithValue("@dni", client.Dni);
             command.Parameters.AddWithValue("@name", client.Name);
@@ -114,6 +172,7 @@ namespace StockControl.Data
 
             command.Parameters.AddWithValue("@address", 
                 client.Address ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@isActive", client.IsActive ? 1 : 0);
             command.ExecuteNonQuery();
         }
         public void Remove(Client client)
@@ -122,7 +181,8 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                DELETE FROM Clients
+                UPDATE Clients
+                SET IsActive = 0
                 WHERE ID = @id;
                 ";
             command.Parameters.AddWithValue("@id", client.ID);
@@ -141,6 +201,7 @@ namespace StockControl.Data
                     Phone = @phone,
                     Email = @email,
                     Address = @address
+                    IsActive = @isActive
                 WHERE ID = @id;
                 ";
             command.Parameters.AddWithValue("@dni", _client.Dni);
@@ -149,6 +210,7 @@ namespace StockControl.Data
             command.Parameters.AddWithValue("@phone", _client.Phone ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@email", _client.Email ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@address", _client.Address ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@isActive", _client.IsActive ? 1 : 0);
             command.Parameters.AddWithValue("@id", _client.ID);
             command.ExecuteNonQuery();
         }

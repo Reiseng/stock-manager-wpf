@@ -102,26 +102,32 @@ namespace StockControl.ViewModels.Clients
 
 private void Save()
 {
+    try{
         clientDto.Name = Name;
         clientDto.LastName = LastName;
         clientDto.Dni = Dni;
         clientDto.Phone = Phone;
         clientDto.Address = Address;
         clientDto.Email = Email;
-    if (IsEditMode)
-    {
-        _ClientService.UpdateClient(clientDto);
-    }
-    else
-    {
-        _ClientService.AddClient(clientDto);
-        CreatedClient = ClientDto.FromModel(_ClientService.GetClientByDni(clientDto.Dni));
-    }
-    
-    ShowSuccessAction?.Invoke();
-                Task.Delay(600).ContinueWith(_ =>
-                    Application.Current.Dispatcher.Invoke(() =>
-                        CloseAction?.Invoke(true)));
+        if (IsEditMode)
+        {
+            _ClientService.UpdateClient(clientDto);
+        }
+        else
+        {
+            _ClientService.AddClient(clientDto);
+            CreatedClient = ClientDto.FromModel(_ClientService.GetClientByDni(clientDto.Dni));
+        }
+        
+        ShowSuccessAction?.Invoke();
+                    Task.Delay(600).ContinueWith(_ =>
+                        Application.Current.Dispatcher.Invoke(() =>
+                            CloseAction?.Invoke(true)));
+        }
+    catch(Exception ex)
+        {
+            MessageBox.Show(ex.Message);
+        }
 }
 
         private bool CanSave()

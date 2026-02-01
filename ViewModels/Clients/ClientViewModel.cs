@@ -124,16 +124,22 @@ namespace StockControl.ViewModels.Clients
         }
         private void DeleteClient(object parameter)
         {
-            if (parameter is not Client Client)
-                return;
-            if (MessageBox.Show(
-                $"¿Eliminar {Client.Name}?",
-                "Confirmar",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning) != MessageBoxResult.Yes)
-                return;
-            _ClientService.RemoveClient(Client.ID);
-            Clients.Remove(Client);
+            try{
+                if (parameter is not Client Client)
+                    return;
+                if (MessageBox.Show(
+                    $"¿Eliminar {Client.Name}?",
+                    "Confirmar",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    return;
+                _ClientService.RemoveClient(Client.ID);
+                Clients.Remove(Client);
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string prop = null)

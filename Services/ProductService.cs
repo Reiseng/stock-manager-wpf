@@ -26,6 +26,7 @@ namespace StockControl.Services
                 throw new Exception("El producto no existe");
             return product;
         }
+
         public Product GetProductByID(int id)
         {
             if (id <= 0)
@@ -52,12 +53,38 @@ namespace StockControl.Services
         {
             if (string.IsNullOrWhiteSpace(_product.Barcode))
                 throw new Exception("Código inválido");
-            if (_repository.GetByBarcode(_product.Barcode) != null)
-                throw new Exception("Ya existe un producto con ese código");
+            if (_repository.GetByBarcode(_product.Barcode) != null && _repository.GetByBarcode(_product.Barcode).IsActive)
+                throw new Exception("Producto ya registrado");
             if (_product.Price <= 0)
                 throw new Exception("Precio inválido");
-            var product = new Product(_product.Barcode, _product.Brand, _product.Name, _product.Price.Value, _product.Stock.Value, (UnitType)_product.Unit!.Value, true);
-            _repository.Add(product);
+            var existing = _repository.GetByBarcodeAnyState(_product.Barcode);
+
+            if (existing != null)
+            {
+                existing.Name = _product.Name;
+                existing.Brand = _product.Brand;
+                existing.Price = _product.Price.Value;
+                existing.Stock = _product.Stock.Value;
+                existing.Unit = (UnitType)_product.Unit!.Value;
+                existing.IsActive = true;
+
+                _repository.Update(existing);
+            }
+            else
+            {
+                var product = new Product(
+                    _product.Barcode,
+                    _product.Brand,
+                    _product.Name,
+                    _product.Price.Value,
+                    _product.Stock.Value,
+                    (UnitType)_product.Unit!.Value,
+                    true
+                );
+
+                _repository.Add(product);
+            }
+
         }
         public void UpdateProduct(ProductDto _product)
         {

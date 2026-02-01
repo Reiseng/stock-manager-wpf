@@ -38,7 +38,15 @@ namespace StockControl.Services{
                 throw new Exception("El cliente no existe");
             return client;
         }
-
+        public Client GetClientByIDAnyState(int id)
+        {
+            if (id <= 0)
+                throw new Exception("Id inválida");
+            Client? client = _repository.GetByIDAnyState(id);
+            if (client == null)
+                throw new Exception("El cliente no existe");
+            return client;
+        }
         public void AddClient(ClientDto clientDto)
         {
             if (string.IsNullOrWhiteSpace(clientDto.Dni))
@@ -47,11 +55,35 @@ namespace StockControl.Services{
                 throw new Exception("Nombre inválido");
             if (string.IsNullOrWhiteSpace(clientDto.LastName))
                 throw new Exception("Apellido inválido");
-            if (_repository.GetByDni(clientDto.Dni) != null)
+            if (_repository.GetByDni(clientDto.Dni) != null && _repository.GetByDni(clientDto.Dni).IsActive)
                 throw new Exception("Usuario ya registrado");
 
-            var client = new Client(clientDto.Dni, clientDto.Name, clientDto.LastName, clientDto.Phone, clientDto.Email, clientDto.Address);
-            _repository.Add(client);
+            var existing = _repository.GetByDniAnyState(clientDto.Dni);
+            if (existing != null)
+            {
+                existing.Name = clientDto.Name;
+                existing.LastName = clientDto.LastName;
+                existing.Phone = clientDto.Phone;
+                existing.Email = clientDto.Email;
+                existing.Address = clientDto.Address;
+                existing.IsActive = true;
+
+                _repository.Update(existing);
+            }
+            else
+            {
+                var client = new Client(
+                    clientDto.Dni,
+                    clientDto.Name,
+                    clientDto.LastName,
+                    clientDto.Phone,
+                    clientDto.Email,
+                    clientDto.Address,
+                    true
+                );
+
+                _repository.Add(client);
+            }
         }
         public void RemoveClient(int id)
         {
