@@ -41,7 +41,7 @@ namespace StockControl.Data
 
                 var item = new CheckoutItem
                 {
-                    product = productService.GetProductByID(reader.GetInt32(2)),
+                    product = productService.GetProductByIDAnyState(reader.GetInt32(2)),
                     Quantity = reader.GetDecimal(3),
                     UnitPrice = reader.GetDecimal(4)
                 };
@@ -100,7 +100,7 @@ namespace StockControl.Data
 
                     var item = new CheckoutItem
                     {
-                        product = productService.GetProductByID(reader.GetInt32(2)),
+                        product = productService.GetProductByIDAnyState(reader.GetInt32(2)),
                         Quantity = reader.GetDecimal(3),
                         UnitPrice = reader.GetDecimal(4)
                     };

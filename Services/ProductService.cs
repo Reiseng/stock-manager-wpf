@@ -36,6 +36,15 @@ namespace StockControl.Services
                 throw new Exception("El producto no existe");
             return product;
         }
+        public Product GetProductByIDAnyState(int id)
+        {
+            if (id <= 0)
+                throw new Exception("Id inválida");
+            Product? product = _repository.GetByIDAnyState(id);
+            if (product == null)
+                throw new Exception("El producto no existe");
+            return product;
+        }
         public List<Product> SearchByName(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
