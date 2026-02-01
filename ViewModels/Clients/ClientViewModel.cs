@@ -56,7 +56,7 @@ namespace StockControl.ViewModels.Clients
             else
                 ViewMode = ClientViewMode.SelectOnly;
             _ClientService = ClientService;
-            Clients = new ObservableCollection<Client>(_ClientService.GetClients());
+            Clients = new ObservableCollection<Client>(_ClientService.GetClients(false));
 
             _ClientsView = CollectionViewSource.GetDefaultView(Clients);
             _ClientsView.Filter = FilterClients;
@@ -79,7 +79,7 @@ namespace StockControl.ViewModels.Clients
         {
             Clients.Clear();
 
-            foreach (var Client in _ClientService.GetClients())
+            foreach (var Client in _ClientService.GetClients(false))
                 Clients.Add(Client);
         }
         private bool FilterClients(object obj)

@@ -11,9 +11,9 @@ namespace StockControl.Services{
             _repository = repository;
         }
 
-        public IReadOnlyList<Client> GetClients()
+        public IReadOnlyList<Client> GetClients(bool includeInactive = false)
         {
-            return _repository.GetAll();
+            return _repository.GetAll(includeInactive: includeInactive);
         }
         public Client GetClientByDni(string dni)
         {
@@ -24,25 +24,16 @@ namespace StockControl.Services{
 
             if (dni.Length != 8 && dni.Length != 11)
                 throw new Exception("DNI o CUIL inválido");
-            Client? client = _repository.GetByDni(dni);
+            Client? client = _repository.GetByDni(dni, includeInactive: false);
             if (client == null)
                 throw new Exception("El cliente no existe");
             return client;
         }
-        public Client GetClientByID(int id)
+        public Client GetClientByID(int id, bool includeInactive = false)
         {
             if (id <= 0)
                 throw new Exception("Id inválida");
-            Client? client = _repository.GetByID(id);
-            if (client == null)
-                throw new Exception("El cliente no existe");
-            return client;
-        }
-        public Client GetClientByIDAnyState(int id)
-        {
-            if (id <= 0)
-                throw new Exception("Id inválida");
-            Client? client = _repository.GetByIDAnyState(id);
+            Client? client = _repository.GetByID(id, includeInactive: includeInactive);
             if (client == null)
                 throw new Exception("El cliente no existe");
             return client;
@@ -58,7 +49,7 @@ namespace StockControl.Services{
             if (_repository.GetByDni(clientDto.Dni) != null && _repository.GetByDni(clientDto.Dni).IsActive)
                 throw new Exception("Usuario ya registrado");
 
-            var existing = _repository.GetByDniAnyState(clientDto.Dni);
+            var existing = _repository.GetByDni(clientDto.Dni, includeInactive: true);
             if (existing != null)
             {
                 existing.Name = clientDto.Name;

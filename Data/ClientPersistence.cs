@@ -12,75 +12,23 @@ namespace StockControl.Data
         {
             db = dbContext;
         }
-        public List<Client> GetAll()
+        public List<Client> GetAll(bool includeInactive = false)
         {
             var clients = new List<Client>();
             using var connection = db.CreateConnection();
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT ID, Dni, Name, LastName, Phone, Email, Address
-                FROM Clients WHERE IsActive = 1;
+                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive
+                FROM Clients
                 ";
+            if (!includeInactive)
+            {
+                command.CommandText += " WHERE IsActive = 1";
+            }
+            command.CommandText += ";";
             using var reader = command.ExecuteReader();
             while (reader.Read())
-            {
-                var client = new Client(
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetString(3),
-                    reader.IsDBNull(4) ? null : reader.GetString(4),
-                    reader.IsDBNull(5) ? null : reader.GetString(5),
-                    reader.IsDBNull(6) ? null : reader.GetString(6),
-                    true
-                );
-                client.ID = reader.GetInt32(0);
-                clients.Add(client);
-            }
-            return clients;
-        }
-
-        public Client? GetByDni(string dni)
-        {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT ID, Dni, Name, LastName, Phone, Email, Address
-                FROM Clients
-                WHERE Dni = @dni AND IsActive = 1;
-                ";
-            command.Parameters.AddWithValue("@dni", dni);
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                var client = new Client(
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetString(3),
-                    reader.IsDBNull(4) ? null : reader.GetString(4),
-                    reader.IsDBNull(5) ? null : reader.GetString(5),
-                    reader.IsDBNull(6) ? null : reader.GetString(6),
-                    true
-                );
-                client.ID = reader.GetInt32(0);
-                return client;
-            }
-            return null;
-        }
-        public Client? GetByDniAnyState(string dni)
-        {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT ID, Dni, Name, LastName, Phone, Email, Address
-                FROM Clients
-                WHERE Dni = @dni;
-                ";
-            command.Parameters.AddWithValue("@dni", dni);
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
             {
                 var client = new Client(
                     reader.GetString(1),
@@ -92,21 +40,26 @@ namespace StockControl.Data
                     reader.GetInt32(7) == 1 ? true : false
                 );
                 client.ID = reader.GetInt32(0);
-                return client;
+                clients.Add(client);
             }
-            return null;
+            return clients;
         }
-        public Client? GetByID(int id)
+
+        public Client? GetByDni(string dni, bool includeInactive = false)
         {
             using var connection = db.CreateConnection();
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT ID, Dni, Name, LastName, Phone, Email, Address
+                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive
                 FROM Clients
-                WHERE ID = @id AND IsActive = 1;
-                ";
-            command.Parameters.AddWithValue("@id", id);
+                WHERE Dni = @dni";
+            if (!includeInactive)
+            {
+                command.CommandText += " AND IsActive = 1";
+            }
+            command.CommandText += ";";
+            command.Parameters.AddWithValue("@dni", dni);
             using var reader = command.ExecuteReader();
             if (reader.Read())
             {
@@ -124,16 +77,21 @@ namespace StockControl.Data
             }
             return null;
         }
-        public Client? GetByIDAnyState(int id)
+        public Client? GetByID(int id, bool includeInactive = false)
         {
             using var connection = db.CreateConnection();
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT ID, Dni, Name, LastName, Phone, Email, Address
+                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive
                 FROM Clients
-                WHERE ID = @id;
+                WHERE ID = @id
                 ";
+            if (!includeInactive)
+            {
+                command.CommandText += " AND IsActive = 1";
+            }
+            command.CommandText += ";";
             command.Parameters.AddWithValue("@id", id);
             using var reader = command.ExecuteReader();
             if (reader.Read())

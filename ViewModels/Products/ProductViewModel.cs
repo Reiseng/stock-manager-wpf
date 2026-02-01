@@ -52,7 +52,7 @@ namespace StockControl.ViewModels.Products
         {
             _productService = productService;
 
-            Products = new ObservableCollection<Product>(_productService.GetProducts());
+            Products = new ObservableCollection<Product>(_productService.GetProducts(false));
 
             _productsView = CollectionViewSource.GetDefaultView(Products);
             _productsView.Filter = FilterProducts;
@@ -75,7 +75,7 @@ namespace StockControl.ViewModels.Products
         {
             Products.Clear();
 
-            foreach (var product in _productService.GetProducts())
+            foreach (var product in _productService.GetProducts(false))
                 Products.Add(product);
         }
         private bool FilterProducts(object obj)

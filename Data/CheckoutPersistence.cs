@@ -33,7 +33,6 @@ namespace StockControl.Data
                 SELECT Id, CheckoutId, ProductId, Quantity, UnitPrice
                 FROM CheckoutItems;
             ";
-
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -41,7 +40,7 @@ namespace StockControl.Data
 
                 var item = new CheckoutItem
                 {
-                    product = productService.GetProductByIDAnyState(reader.GetInt32(2)),
+                    product = productService.GetProductByID(reader.GetInt32(2), includeInactive: true),
                     Quantity = reader.GetDecimal(3),
                     UnitPrice = reader.GetDecimal(4)
                 };
@@ -63,7 +62,7 @@ namespace StockControl.Data
             while (reader.Read())
             {
                 int checkoutId = reader.GetInt32(0);
-                Client client = clientService.GetClientByIDAnyState(reader.GetInt32(1));
+                Client client = clientService.GetClientByID(reader.GetInt32(1), includeInactive: true);
                 var checkout = new Checkout(
                     client,
                     itemsByCheckout.ContainsKey(checkoutId)
@@ -100,7 +99,7 @@ namespace StockControl.Data
 
                     var item = new CheckoutItem
                     {
-                        product = productService.GetProductByIDAnyState(reader.GetInt32(2)),
+                        product = productService.GetProductByID(reader.GetInt32(2), includeInactive: true),
                         Quantity = reader.GetDecimal(3),
                         UnitPrice = reader.GetDecimal(4)
                     };
@@ -124,7 +123,7 @@ namespace StockControl.Data
                 while (reader.Read())
                 {
                     int checkoutId = reader.GetInt32(0);
-                    Client client = clientService.GetClientByIDAnyState(reader.GetInt32(1));
+                    Client client = clientService.GetClientByID(reader.GetInt32(1), includeInactive: true);
                     var checkout = new Checkout(
                         client,
                         itemsByCheckout.ContainsKey(checkoutId)

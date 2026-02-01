@@ -13,34 +13,25 @@ namespace StockControl.Services
             _repository = repository;
         }
 
-        public IReadOnlyList<Product> GetProducts()
+        public IReadOnlyList<Product> GetProducts(bool includeInactive)
         {
-            return _repository.GetAll();
+            return _repository.GetAll(includeInactive: includeInactive);
         }
         public Product GetProductByBarcode(string barcode)
         {
             if (string.IsNullOrWhiteSpace(barcode))
                 throw new Exception("Código inválido");
-            Product? product = _repository.GetByBarcode(barcode);
+            Product? product = _repository.GetByBarcode(barcode, false);
             if (product == null)
                 throw new Exception("El producto no existe");
             return product;
         }
 
-        public Product GetProductByID(int id)
+        public Product GetProductByID(int id, bool includeInactive)
         {
             if (id <= 0)
                 throw new Exception("Id inválida");
-            Product? product = _repository.GetByID(id);
-            if (product == null)
-                throw new Exception("El producto no existe");
-            return product;
-        }
-        public Product GetProductByIDAnyState(int id)
-        {
-            if (id <= 0)
-                throw new Exception("Id inválida");
-            Product? product = _repository.GetByIDAnyState(id);
+            Product? product = _repository.GetByID(id, includeInactive: includeInactive);
             if (product == null)
                 throw new Exception("El producto no existe");
             return product;
@@ -52,7 +43,7 @@ namespace StockControl.Services
 
             text = text.ToLower();
 
-            return _repository.GetAll()
+            return _repository.GetAll(false)
                 .Where(p =>
                     p.Name.ToLower().Contains(text) ||
                     p.Brand.ToLower().Contains(text))
@@ -62,12 +53,11 @@ namespace StockControl.Services
         {
             if (string.IsNullOrWhiteSpace(_product.Barcode))
                 throw new Exception("Código inválido");
-            if (_repository.GetByBarcode(_product.Barcode) != null && _repository.GetByBarcode(_product.Barcode).IsActive)
+            if (_repository.GetByBarcode(_product.Barcode, true) != null)
                 throw new Exception("Producto ya registrado");
             if (_product.Price <= 0)
                 throw new Exception("Precio inválido");
-            var existing = _repository.GetByBarcodeAnyState(_product.Barcode);
-
+            var existing = _repository.GetByBarcode(_product.Barcode, true);
             if (existing != null)
             {
                 existing.Name = _product.Name;
@@ -97,7 +87,7 @@ namespace StockControl.Services
         }
         public void UpdateProduct(ProductDto _product)
         {
-            Product? product = _repository.GetByID(_product.Id);
+            Product? product = _repository.GetByID(_product.Id, false);
             if (product == null)
                 throw new Exception("El producto no existe");
             if (_product.Name != null)
@@ -130,7 +120,7 @@ namespace StockControl.Services
         {
             if (id <= 0)
                 throw new Exception("ID inválido");
-            var product = _repository.GetByID(id);
+            var product = _repository.GetByID(id, false);
             if (product == null)
                 throw new Exception("Producto no encontrado");
             _repository.Remove(product);
@@ -144,7 +134,7 @@ namespace StockControl.Services
             if (quantity <= 0)
                 throw new Exception("Cantidad inválida");
 
-            var product = _repository.GetByID(id);
+            var product = _repository.GetByID(id, false);
 
             if (product == null)
                 throw new Exception("Producto no encontrado");
@@ -162,7 +152,7 @@ namespace StockControl.Services
             if (quantity <= 0)
                 throw new Exception("Cantidad inválida");
 
-            var product = _repository.GetByID(id);
+            var product = _repository.GetByID(id, false);
 
             if (product == null)
                 throw new Exception("Producto no encontrado");

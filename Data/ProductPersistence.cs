@@ -3,6 +3,7 @@
 using StockControl.Models;
 using StockControl.Enums;
 using StockControl.Config.DataBaseConfig;
+using SQLitePCL;
 
 
 namespace StockControl.Data{
@@ -13,7 +14,7 @@ public class ProductPersistence
     {
         db = dbContext;
     }
-    public List<Product> GetAll()
+    public List<Product> GetAll(bool includeInactive)
     {
         var products = new List<Product>();
         using var connection = db.CreateConnection();
@@ -22,9 +23,13 @@ public class ProductPersistence
             using var command = connection.CreateCommand();
             command.CommandText = @"
                 SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, IsActive
-                FROM Products WHERE IsActive = 1;
+                FROM Products
                 ";
-
+            if (!includeInactive)
+            {
+                command.CommandText += " WHERE IsActive = 1";
+            }
+            command.CommandText += ";";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -42,7 +47,7 @@ public class ProductPersistence
             }
             return products;
     }
-    public Product? GetByID(int id)
+    public Product? GetByID(int id, bool includeInactive)
         {
             using var connection = db.CreateConnection();
             connection.Open();
@@ -50,8 +55,13 @@ public class ProductPersistence
             command.CommandText = @"
                 SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, IsActive
                 FROM Products
-                WHERE Id = @id AND IsActive = 1;
+                WHERE Id = @id
                 ";
+            if (!includeInactive)
+            {
+                command.CommandText += " AND IsActive = 1";
+            }
+            command.CommandText += ";";
             command.Parameters.AddWithValue("@id", id);
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -70,7 +80,7 @@ public class ProductPersistence
             }
             return null;
         }
-    public Product? GetByIDAnyState(int id)
+    public Product? GetByBarcode(string barcode, bool includeInactive)
         {
             using var connection = db.CreateConnection();
             connection.Open();
@@ -78,64 +88,13 @@ public class ProductPersistence
             command.CommandText = @"
                 SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, IsActive
                 FROM Products
-                WHERE Id = @id;
+                WHERE Barcode = @barcode
                 ";
-            command.Parameters.AddWithValue("@id", id);
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
+            if (!includeInactive)
             {
-                var product = new Product(
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetString(3),
-                    reader.GetDecimal(4),
-                    reader.GetDecimal(5),
-                    (UnitType)reader.GetInt32(6),
-                    reader.GetBoolean(7)
-                );
-                product.Id = reader.GetInt32(0);
-                return product;
+                command.CommandText += " AND IsActive = 1";
             }
-            return null;
-        }
-    public Product? GetByBarcode(string barcode)
-        {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, IsActive
-                FROM Products
-                WHERE Barcode = @barcode AND IsActive = 1;
-                ";
-            command.Parameters.AddWithValue("@barcode", barcode);
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                var product = new Product(
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    reader.GetString(3),
-                    reader.GetDecimal(4),
-                    reader.GetDecimal(5),
-                    (UnitType)reader.GetInt32(6),
-                    reader.GetBoolean(7)
-                );
-                product.Id = reader.GetInt32(0);
-                return product;
-            }
-            return null;
-        }
-    public Product? GetByBarcodeAnyState(string barcode)
-        {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, IsActive
-                FROM Products
-                WHERE Barcode = @barcode;
-                ";
+            command.CommandText += ";";
             command.Parameters.AddWithValue("@barcode", barcode);
             using var reader = command.ExecuteReader();
             if (reader.Read())
