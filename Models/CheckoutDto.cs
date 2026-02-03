@@ -27,7 +27,7 @@ public class CheckoutDto
         }
 
         public decimal SubTotal => Items.Sum(i => i.Total);
-        public decimal Total => Items.Sum(i => i.Total)*1.21m;
+        public decimal Total => Items.Sum(i => i.Total);
     public static CheckoutDto FromModel(Checkout checkout)
     {
         return new CheckoutDto

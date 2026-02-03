@@ -9,6 +9,7 @@ using StockControl.ViewModels.Clients;
 using StockControl.ViewModels.Checkouts;
 using StockControl.Views.Checkouts;
 using System.Windows;
+using StockControl.ViewModels.Settings;
 
 namespace StockControl.ViewModels
 {
@@ -74,7 +75,7 @@ namespace StockControl.ViewModels
 
             ShowSettingsCommand = new RelayCommand(_ =>
             {
-                CurrentView = new SettingsPanelView();
+                CurrentView = new SettingsPanelView{ DataContext = new SettingsViewModel(AppServices.CompanyService)};
             });
         }
 

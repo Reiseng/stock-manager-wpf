@@ -12,4 +12,6 @@ public static class AppServices
     
     public static CheckoutPersistence CheckoutPersistence { get; set; }
     public static CheckoutService CheckoutService { get; set; }
+    public static CompanyPersistence CompanyPersistence { get; set; }
+    public static CompanyService CompanyService { get; set; }
 }

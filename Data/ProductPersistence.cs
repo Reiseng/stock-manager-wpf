@@ -1,10 +1,8 @@
-// Products is handled in memory to keep the project simple and focused on core logic.
-// This can be replaced with persistence later (DB or file storage).
+// Products is any item or good that a business offers for sale to customers.
+// Product data persistence involves storing and retrieving product information from a database.
 using StockControl.Models;
 using StockControl.Enums;
 using StockControl.Config.DataBaseConfig;
-using SQLitePCL;
-
 
 namespace StockControl.Data{
 public class ProductPersistence

@@ -11,7 +11,7 @@
         <!-- Success Text -->
     <Border Padding="20" CornerRadius="6">
         <TextBlock
-            Text="Agregado correctamente"
+            Text="{Binding Message, RelativeSource={RelativeSource AncestorType=Window}}"
             Foreground="White"
             FontSize="16"
             FontWeight="SemiBold"/>

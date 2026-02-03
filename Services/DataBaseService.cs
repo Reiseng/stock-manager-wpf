@@ -64,6 +64,22 @@ namespace StockControl.Services.Database
                     FOREIGN KEY(CheckoutId) REFERENCES Checkouts(Id),
                     FOREIGN KEY(ProductId) REFERENCES Products(Id)
                 );
+
+                CREATE TABLE IF NOT EXISTS CompanyInfo (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CUIT TEXT NOT NULL UNIQUE,
+                    Name TEXT NOT NULL,
+                    Address TEXT NOT NULL,
+                    Phone TEXT,
+                    Email TEXT,
+                    TaxCondition INTEGER NOT NULL,
+                    Tax REAL NOT NULL DEFAULT 21.0
+                );
+                INSERT INTO CompanyInfo (CUIT, Name, Address, Phone, Email, TaxCondition, Tax)
+                SELECT '00000000', 'Empresa', 'Dirección de la empresa', NULL, NULL, 1, 21.0
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM CompanyInfo WHERE CUIT = '00000000'
+                );
             ";
             command.ExecuteNonQuery();
         }

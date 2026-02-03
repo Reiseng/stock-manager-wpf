@@ -1,5 +1,5 @@
-// Client is handled in memory to keep the project simple and focused on core logic.
-// This can be replaced with persistence later (DB or file storage).
+// Client is an individual or organization that purchases goods or services from a business.
+// Client data persistence involves storing and retrieving client information from a database.
 using StockControl.Config.DataBaseConfig;
 using StockControl.Models;
 

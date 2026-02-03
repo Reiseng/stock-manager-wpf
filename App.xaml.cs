@@ -36,12 +36,17 @@ public partial class App : Application
                 new ClientPersistence(AppServices.DatabaseContext);
             AppServices.ClientService =
                 new ClientService(AppServices.ClientPersistence);
+            AppServices.CompanyPersistence =
+                new CompanyPersistence(AppServices.DatabaseContext);
+            AppServices.CompanyService =
+                new CompanyService(AppServices.CompanyPersistence);
             AppServices.CheckoutPersistence =
                 new CheckoutPersistence(AppServices.DatabaseContext, 
                     AppServices.ClientService, 
                     AppServices.ProductService);
             AppServices.CheckoutService =
                 new CheckoutService(AppServices.CheckoutPersistence);
+
             }
 
 }

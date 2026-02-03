@@ -1,5 +1,4 @@
-// Checkout is handled in memory to keep the project simple and focused on core logic.
-// This can be replaced with persistence later (DB or file storage).
+// Checkout is the process of finalizing a sale or transaction, typically involving payment and receipt generation.
 using StockControl.Config.DataBaseConfig;
 using StockControl.Enums;
 using StockControl.Models;

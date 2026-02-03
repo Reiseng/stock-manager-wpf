@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using StockControl.Enums;
 
 namespace StockControl.Models

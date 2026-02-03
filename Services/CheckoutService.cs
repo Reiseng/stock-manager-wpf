@@ -6,14 +6,16 @@ namespace StockControl.Services
 {
     public class CheckoutService
     {
-        private const decimal taxes = 1.21m;
         private Checkout _currentCheckout;
         private readonly CheckoutPersistence _repository;
         ProductService productService;
+        CompanyService companyService;
+
         public CheckoutService(CheckoutPersistence repository)
         {
             _repository = repository;
             productService = AppServices.ProductService;
+            companyService = AppServices.CompanyService;
             StartCheckout();
         }
         public IReadOnlyList<Checkout> GetCheckouts()
@@ -122,7 +124,7 @@ namespace StockControl.Services
                     item.Quantity
                 );
             }
-            _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total)*taxes;
+            _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total)*(1+(companyService.GetCompanyInfo().tax/100));
             _repository.Add(_currentCheckout);
 
             StartCheckout();

@@ -36,7 +36,7 @@ namespace StockControl.ViewModels.Checkouts
 
         public string ClientDocument =>
             Checkout.Client?.Dni?? "";
-
+        private Company? _company;
         private CheckoutDto _checkout;
         public CheckoutDto Checkout
         {
@@ -78,10 +78,11 @@ namespace StockControl.ViewModels.Checkouts
         public RelayCommand RemoveItemCommand { get; }
 
         public decimal SubTotal => Checkout?.SubTotal ?? 0;
-        public decimal Total => Checkout?.Total ?? 0;
+        public decimal Total => Checkout?.Total * (1+ (_company?.tax/100 ?? 0)) ?? 0;
 
         public CheckoutViewModel(CheckoutService checkoutService)
         {
+            _company = AppServices.CompanyService.GetCompanyInfo();
             InvoiceTypes = Enum.GetValues(typeof(InvoiceType));
             _checkoutService = checkoutService;
             ConfirmCheckoutCommand = new RelayCommand(

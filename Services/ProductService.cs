@@ -53,7 +53,7 @@ namespace StockControl.Services
         {
             if (string.IsNullOrWhiteSpace(_product.Barcode))
                 throw new Exception("Código inválido");
-            if (_repository.GetByBarcode(_product.Barcode, true) != null)
+            if (_repository.GetByBarcode(_product.Barcode, false) != null)
                 throw new Exception("Producto ya registrado");
             if (_product.Price <= 0)
                 throw new Exception("Precio inválido");
