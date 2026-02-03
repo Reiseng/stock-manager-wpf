@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using QuestPDF.Fluent;
+using StockControl.Dtos;
 using StockControl.Enums;
 using StockControl.Models;
 using StockControl.Services;
@@ -29,6 +31,7 @@ namespace StockControl.ViewModels.Checkouts
         public ObservableCollection<CheckoutItemDto> Items
             => Checkout.Items;
         private readonly CheckoutService _checkoutService;
+        private readonly InvoiceDocumentService invoiceDocumentService;
         public string ClientFullName =>
             Checkout.Client != null
                 ? $"{Checkout.Client.Name} {Checkout.Client.LastName}"
@@ -76,6 +79,7 @@ namespace StockControl.ViewModels.Checkouts
         public RelayCommand AddClientCommand { get; }
         public RelayCommand ConfirmCheckoutCommand { get; }
         public RelayCommand RemoveItemCommand { get; }
+        public RelayCommand GenerateInvoicePDFCommand { get; }
 
         public decimal SubTotal => Checkout?.SubTotal ?? 0;
         public decimal Total => Checkout?.Total * (1+ (_company?.tax/100 ?? 0)) ?? 0;
@@ -92,6 +96,7 @@ namespace StockControl.ViewModels.Checkouts
             AddClientCommand = new RelayCommand(_ => OpenAddClient());
             AddProductCommand = new RelayCommand(_ => OpenAddProduct());
             RemoveItemCommand = new RelayCommand(item => RemoveItem((CheckoutItemDto)item));
+            GenerateInvoicePDFCommand = new RelayCommand(_ => GenerateInvoicePDF());
             LoadCheckout();
         }
         private void RemoveItem(CheckoutItemDto item)
@@ -261,6 +266,26 @@ namespace StockControl.ViewModels.Checkouts
         {
             return text.All(char.IsDigit);
         }
-
+        public void ClearCheckout()
+        {
+            _checkoutService.ClearCheckout();
+            LoadCheckout();
+        }
+        public void GenerateInvoicePDF()
+        {
+            InvoiceDto invoice = new InvoiceDto(
+                Checkout.ID.ToString(),
+                DateTime.Now,
+                _company!,
+                Checkout.Client!,
+                Checkout.Items.ToList(),
+                SubTotal,
+                _company?.tax ?? 0,
+                Total
+            );
+            var invoiceService = new InvoiceDocumentService(invoice);
+            //invoiceService.GeneratePdf($"{Checkout.Client?.Name ?? "invoice"}_{Checkout.ID}");
+            invoiceService.GeneratePdfAndShow();
+        }
     }
 }

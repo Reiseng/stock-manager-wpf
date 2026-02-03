@@ -160,7 +160,7 @@
                         Margin="5"/>
 
                 <Button Content="PDF"
-                        IsEnabled="False"
+                        Command="{Binding GenerateInvoicePDFCommand}"
                         Margin="5"/>
             </StackPanel>
         </Grid>

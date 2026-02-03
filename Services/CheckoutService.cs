@@ -9,6 +9,7 @@ namespace StockControl.Services
         private Checkout _currentCheckout;
         private readonly CheckoutPersistence _repository;
         ProductService productService;
+        ClientService clientService;
         CompanyService companyService;
 
         public CheckoutService(CheckoutPersistence repository)
@@ -16,6 +17,7 @@ namespace StockControl.Services
             _repository = repository;
             productService = AppServices.ProductService;
             companyService = AppServices.CompanyService;
+            clientService = AppServices.ClientService;
             StartCheckout();
         }
         public IReadOnlyList<Checkout> GetCheckouts()
@@ -36,6 +38,7 @@ namespace StockControl.Services
         {
             _currentCheckout = new Checkout
             {
+                Client = clientService.GetFinalConsumer(),
                 Items = new List<CheckoutItem>(),
                 Date = DateTime.Now
             };
@@ -135,6 +138,11 @@ namespace StockControl.Services
                 StartCheckout();
 
             return _currentCheckout;
+        }
+
+        internal void ClearCheckout()
+        {
+            StartCheckout();
         }
     }
 }

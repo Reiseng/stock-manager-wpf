@@ -5,6 +5,7 @@ using StockControl.Services;
 using System.Windows;
 using StockControl.Enums;
 using StockControl.Models;
+using StockControl.Dtos;
 
 namespace StockControl.ViewModels.Products
 {

@@ -1,5 +1,6 @@
 using StockControl.Data;
 using StockControl.Models;
+using StockControl.Dtos;
 
 namespace StockControl.Services{
     public class ClientService

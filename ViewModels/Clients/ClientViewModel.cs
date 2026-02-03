@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using StockControl.Views.Clients;
 using StockControl.Views.Windows;
+using StockControl.Dtos;
 
 
 namespace StockControl.ViewModels.Clients

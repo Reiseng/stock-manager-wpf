@@ -2,8 +2,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using StockControl.Enums;
-
-namespace StockControl.Models{
+using StockControl.Models;
+namespace StockControl.Dtos{
 public class CheckoutDto
 {
     public event PropertyChangedEventHandler? PropertyChanged;

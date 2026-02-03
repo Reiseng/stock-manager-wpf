@@ -6,6 +6,7 @@ using StockControl.Services;
 using System.Runtime.CompilerServices;
 using StockControl.Views.Checkouts;
 using System.Windows;
+using StockControl.Dtos;
 
 namespace StockControl.ViewModels.Checkouts
 {

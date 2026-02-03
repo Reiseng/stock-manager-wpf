@@ -2,6 +2,7 @@ using StockControl.Services;
 using StockControl.Models;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using StockControl.Dtos;
 
 namespace StockControl.ViewModels.Checkouts
 {

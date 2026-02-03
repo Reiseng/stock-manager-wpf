@@ -4,6 +4,7 @@ using System.Windows.Input;
 using StockControl.Services;
 using System.Windows;
 using StockControl.Models;
+using StockControl.Dtos;
 
 namespace StockControl.ViewModels.Clients
 {

@@ -1,6 +1,5 @@
 using StockControl.Enums;
-using StockControl.Utils;
-namespace StockControl.Models
+namespace StockControl.Dtos
 {
     public class ProductDto
     {

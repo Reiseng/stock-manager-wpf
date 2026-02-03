@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Windows;
+using QuestPDF.Infrastructure;
 using StockControl.Config.DataBaseConfig;
 using StockControl.Data;
 using StockControl.Services;
@@ -11,6 +12,7 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
         {
+            QuestPDF.Settings.License = LicenseType.Community;
             base.OnStartup(e);
 
             var dbPath = Path.Combine(

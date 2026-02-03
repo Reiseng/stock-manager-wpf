@@ -1,4 +1,6 @@
-namespace StockControl.Models
+using StockControl.Models;
+
+namespace StockControl.Dtos
 {
     public class ClientDto
     {

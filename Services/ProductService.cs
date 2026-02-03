@@ -1,4 +1,5 @@
 using StockControl.Data;
+using StockControl.Dtos;
 using StockControl.Enums;
 using StockControl.Models;
 
