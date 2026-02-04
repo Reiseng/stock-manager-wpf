@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using StockControl.Dtos;
 using QuestPDF.Fluent;
+using StockControl.Utils;
 
 namespace StockControl.ViewModels.Checkouts
 {
@@ -94,7 +95,9 @@ namespace StockControl.ViewModels.Checkouts
                 Total
             );
             var invoiceService = new InvoiceDocumentService(invoice);
-            invoiceService.GeneratePdfAndShow();
+            invoiceService.GeneratePdfAndShow(
+                $"Factura_{invoice.invoiceNumber}_{invoice.client.Name}{invoice.client.LastName}_{DateTime.Now:yyyyMMdd}"
+            );
             CloseAction?.Invoke(false);
         }
     }

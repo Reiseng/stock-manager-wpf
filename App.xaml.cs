@@ -12,7 +12,7 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
         {
-            QuestPDF.Settings.License = LicenseType.Community;
+            QuestPDF.Settings.License = LicenseType.Community; //QuestPDF License
             base.OnStartup(e);
 
             var dbPath = Path.Combine(

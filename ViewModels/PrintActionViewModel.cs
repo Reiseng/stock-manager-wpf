@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using QuestPDF.Fluent;
 using StockControl.Dtos;
 using StockControl.Services;
+using StockControl.Utils;
 
 namespace StockControl.ViewModels
 {
@@ -23,7 +23,9 @@ namespace StockControl.ViewModels
         {
             var invoiceService = new InvoiceDocumentService(invoice);
             //invoiceService.GeneratePdf($"{Checkout.Client?.Name ?? "invoice"}_{Checkout.ID}");
-            invoiceService.GeneratePdfAndShow();
+            invoiceService.GeneratePdfAndShow(
+                $"Factura_{invoice.invoiceNumber}_{DateTime.Now:yyyyMMdd}"
+            );
             CloseAction?.Invoke(false);
         }
     }
