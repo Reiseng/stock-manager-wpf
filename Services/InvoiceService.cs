@@ -20,12 +20,12 @@ namespace StockControl.Services
             container
                 .Page(page =>
                 {
-                    page.Margin(50);
+                    page.Margin(10);
                     page.Size(PageSizes.A4);
 
-                    page.Header().Height(100).Background(Colors.Grey.Lighten1).Element(ComposeHeader);
-                    page.Content().Background(Colors.Grey.Lighten3).Element(ComposeContent);
-                    page.Footer().Height(50).Background(Colors.Grey.Lighten1).Element(ComposeFooter);
+                    page.Header().Height(80).Background(Colors.Grey.Lighten3).Element(ComposeHeader);
+                    page.Content().Element(ComposeContent);
+                    page.Footer().Height(40).Background(Colors.Grey.Lighten3).Element(ComposeFooter);
                 });
         }
         public void ComposeHeader(IContainer container)
@@ -35,6 +35,7 @@ namespace StockControl.Services
                 row.RelativeItem().Column(column =>
                 {
                     column.Item().Text($"Factura N°: {Invoice.invoiceNumber}").FontSize(16).Bold();
+                    column.Item().Text($"Tipo de factura: {Invoice.invoiceType}");
                     column.Item().Text($"Fecha: {Invoice.date:dd/MM/yyyy}").FontSize(12);
                 });
                 row.ConstantItem(100).Height(50).Placeholder();

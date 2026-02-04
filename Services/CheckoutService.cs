@@ -92,7 +92,7 @@ namespace StockControl.Services
         {
             _currentCheckout.invoiceType = type;
         }
-        public void ConfirmCheckout()
+        public Checkout ConfirmCheckout()
         {
             if (_currentCheckout.Items.Count == 0)
                 throw new Exception("El carrito está vacío");
@@ -128,9 +128,8 @@ namespace StockControl.Services
                 );
             }
             _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total)*(1+(companyService.GetCompanyInfo().tax/100));
-            _repository.Add(_currentCheckout);
-
-            StartCheckout();
+            var lastCheckout = _repository.Add(_currentCheckout);
+            return lastCheckout;
         }
         public Checkout GetCurrentCheckout()
         {

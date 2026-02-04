@@ -3,6 +3,7 @@ using StockControl.Models;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using StockControl.Dtos;
+using QuestPDF.Fluent;
 
 namespace StockControl.ViewModels.Checkouts
 {
@@ -10,7 +11,8 @@ namespace StockControl.ViewModels.Checkouts
     {
         private readonly CheckoutService _checkoutService;
         private readonly CheckoutDto _checkoutDto;
-        public Action? CloseAction { get; set; }
+        public Company? company;
+        public Action<bool>? CloseAction;
         public string ClientFullName =>
             ClientDto != null
                 ? $"{ClientDto.Name} {ClientDto.LastName}"
@@ -18,12 +20,14 @@ namespace StockControl.ViewModels.Checkouts
         public string ClientDocument =>
             ClientDto?.Dni?? "";
         public event PropertyChangedEventHandler? PropertyChanged;
-
+        public RelayCommand PrintPDFCommand { get; }
         protected void OnPropertyChanged(string propertyName)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         public CheckoutDetailViewModel(CheckoutService CheckoutService, CheckoutDto Checkout)
         {
+            var companyService = AppServices.CompanyService;
+            company = companyService.GetCompanyInfo();
             _checkoutService = CheckoutService;
             _checkoutDto = Checkout;
             ID = Checkout.ID;
@@ -31,7 +35,8 @@ namespace StockControl.ViewModels.Checkouts
             Items = Checkout.Items;
             Date = Checkout.Date;
             SubTotal = Checkout.SubTotal;
-            Total = Checkout.Total;
+            Total = Checkout.SubTotal*(1+(company.tax/100));
+            PrintPDFCommand = new RelayCommand(_ => GenerateInvoicePDF());
         }
         private int _id;
         public int ID
@@ -75,8 +80,24 @@ namespace StockControl.ViewModels.Checkouts
             get => _subtotal;
             set {_subtotal = value;}
         }
+        private void GenerateInvoicePDF()
+        {
+            InvoiceDto invoice = new InvoiceDto(
+                ID.ToString(),
+                Date,
+                _checkoutDto.InvoiceType,
+                company!,
+                ClientDto!,
+                Items.ToList(),
+                SubTotal,
+                company?.tax ?? 0,
+                Total
+            );
+            var invoiceService = new InvoiceDocumentService(invoice);
+            invoiceService.GeneratePdfAndShow();
+            CloseAction?.Invoke(false);
+        }
     }
-
     public interface INotifyPropertyChange
     {
     }

@@ -88,7 +88,7 @@ namespace StockControl.ViewModels.Checkouts
                 Owner = Application.Current.MainWindow
             };
 
-            vm.CloseAction = () => view.Close();
+            vm.CloseAction = success => view.Close();
             view.ShowDialog();
 
             LoadCheckouts();

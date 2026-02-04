@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Security.AccessControl;
 using System.Windows;
 using QuestPDF.Fluent;
 using StockControl.Dtos;
@@ -28,10 +29,10 @@ namespace StockControl.ViewModels.Checkouts
             }
         }
         public Array InvoiceTypes { get; }
+        public Checkout lastCheckout {get ; set; }
         public ObservableCollection<CheckoutItemDto> Items
             => Checkout.Items;
         private readonly CheckoutService _checkoutService;
-        private readonly InvoiceDocumentService invoiceDocumentService;
         public string ClientFullName =>
             Checkout.Client != null
                 ? $"{Checkout.Client.Name} {Checkout.Client.LastName}"
@@ -78,11 +79,11 @@ namespace StockControl.ViewModels.Checkouts
         public RelayCommand AddProductCommand { get; }
         public RelayCommand AddClientCommand { get; }
         public RelayCommand ConfirmCheckoutCommand { get; }
+        public RelayCommand CancelCommand { get; }
         public RelayCommand RemoveItemCommand { get; }
-        public RelayCommand GenerateInvoicePDFCommand { get; }
 
         public decimal SubTotal => Checkout?.SubTotal ?? 0;
-        public decimal Total => Checkout?.Total * (1+ (_company?.tax/100 ?? 0)) ?? 0;
+        public decimal Total => Checkout?.SubTotal * (1+ (_company?.tax/100 ?? 0)) ?? 0;
 
         public CheckoutViewModel(CheckoutService checkoutService)
         {
@@ -93,10 +94,13 @@ namespace StockControl.ViewModels.Checkouts
                 _ => ConfirmCheckout(),
                 _ => Checkout.Items.Any()
             );
+            CancelCommand = new RelayCommand(
+                _=>ClearCheckout()
+            );
             AddClientCommand = new RelayCommand(_ => OpenAddClient());
             AddProductCommand = new RelayCommand(_ => OpenAddProduct());
             RemoveItemCommand = new RelayCommand(item => RemoveItem((CheckoutItemDto)item));
-            GenerateInvoicePDFCommand = new RelayCommand(_ => GenerateInvoicePDF());
+            
             LoadCheckout();
         }
         private void RemoveItem(CheckoutItemDto item)
@@ -155,7 +159,9 @@ namespace StockControl.ViewModels.Checkouts
                 {
                     _checkoutService.SetClient(AppServices.ClientService.GetFinalConsumer());
                 }
-                _checkoutService.ConfirmCheckout();
+                lastCheckout = _checkoutService.ConfirmCheckout();
+                OpenActions();
+                _checkoutService.StartCheckout();
                 Checkout = null;
                 LoadCheckout();
                 OnPropertyChanged(nameof(ClientFullName));
@@ -194,11 +200,10 @@ namespace StockControl.ViewModels.Checkouts
 
                 view.Close();
             };
-
             view.ShowDialog();
-            ClientDto? selectedClientDto = ClientDto.FromModel(selectedClient);
             if (selectedClient != null)
             {
+                ClientDto? selectedClientDto = ClientDto.FromModel(selectedClient);
                 _checkout.Client = selectedClientDto;
             }
                 OnPropertyChanged(nameof(Checkout));
@@ -262,6 +267,36 @@ namespace StockControl.ViewModels.Checkouts
                 SearchResults.Clear();
             }
         }
+        public void OpenActions()
+        {
+            InvoiceDto invoice = new InvoiceDto(
+                lastCheckout.ID.ToString(),
+                lastCheckout.Date,
+                lastCheckout.invoiceType,
+                _company!,
+                Checkout.Client!,
+                Checkout.Items.ToList(),
+                SubTotal,
+                _company?.tax ?? 0,
+                Total
+            );
+            var vm = new PrintActionViewModel(invoice);
+            var view = new PrintActionWindow
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow
+            };
+            vm.CloseAction = success =>
+            {
+                new SuccessWindow
+                {
+                    Owner = view
+                }.ShowDialog();
+
+                view.Close();
+            };
+            view.ShowDialog();
+        }
         private bool IsBarcode(string text)
         {
             return text.All(char.IsDigit);
@@ -271,21 +306,6 @@ namespace StockControl.ViewModels.Checkouts
             _checkoutService.ClearCheckout();
             LoadCheckout();
         }
-        public void GenerateInvoicePDF()
-        {
-            InvoiceDto invoice = new InvoiceDto(
-                Checkout.ID.ToString(),
-                DateTime.Now,
-                _company!,
-                Checkout.Client!,
-                Checkout.Items.ToList(),
-                SubTotal,
-                _company?.tax ?? 0,
-                Total
-            );
-            var invoiceService = new InvoiceDocumentService(invoice);
-            //invoiceService.GeneratePdf($"{Checkout.Client?.Name ?? "invoice"}_{Checkout.ID}");
-            invoiceService.GeneratePdfAndShow();
-        }
+
     }
 }

@@ -154,14 +154,6 @@
                 <Button Content="Confirmar"
                         Command="{Binding ConfirmCheckoutCommand}"
                         Margin="5"/>
-
-                <Button Content="Ticket"
-                        IsEnabled="False"
-                        Margin="5"/>
-
-                <Button Content="PDF"
-                        Command="{Binding GenerateInvoicePDFCommand}"
-                        Margin="5"/>
             </StackPanel>
         </Grid>
     </Grid>

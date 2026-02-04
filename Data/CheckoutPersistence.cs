@@ -138,7 +138,7 @@ namespace StockControl.Data
             }
         return null;
         }
-        public void Add(Checkout _checkout)
+        public Checkout Add(Checkout _checkout)
         {
             using var connection = db.CreateConnection();
             connection.Open();
@@ -167,6 +167,8 @@ namespace StockControl.Data
                 itemCommand.Parameters.AddWithValue("@unitPrice", item.UnitPrice);
                 itemCommand.ExecuteNonQuery();
             }
+            _checkout.ID = (int)checkoutId;
+            return _checkout;
         }
     }
 }
