@@ -122,10 +122,12 @@ namespace StockControl.Services
 
             foreach (var item in _currentCheckout.Items)
             {
-                productService.DecreaseStock(
-                    item.product.Id,
-                    item.Quantity
-                );
+                if (item.product.Unit != UnitType.Service){
+                    productService.DecreaseStock(
+                        item.product.Id,
+                        item.Quantity
+                    );
+                }
             }
             _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total)*(1+(companyService.GetCompanyInfo().tax/100));
             var lastCheckout = _repository.Add(_currentCheckout);

@@ -212,22 +212,40 @@ namespace StockControl.ViewModels.Checkouts
         }
         private void OpenAddProduct()
         {
-            var vm = new AddProductViewModel(AppServices.ProductService);
-            var view = new AddProductWindow
+            Product? selectedProduct = null;
+
+            var vm = new ProductsViewModel(
+                AppServices.ProductService,
+                CanEditOrDelete: false
+            );
+
+            var view = new ProductWindow
             {
                 DataContext = vm,
                 Owner = Application.Current.MainWindow
             };
 
-            vm.ShowSuccessAction = () =>
+            vm.CloseAction = SelectedClient =>
             {
+                selectedProduct = vm.SelectedProduct;
                 new SuccessWindow
                 {
                     Owner = view
-                }.Show();
+                }.ShowDialog();
+
+                view.Close();
             };
-            vm.CloseAction = () => view.Close();
+
             view.ShowDialog();
+
+            if (selectedProduct != null)
+            {
+                ProductDto? selectedProductDto = ProductDto.FromModel(selectedProduct);
+                _checkoutService.AddProduct(selectedProduct, 1);
+            }
+                OnPropertyChanged(nameof(Checkout));
+                OnPropertyChanged(nameof(Checkout.Items));
+            LoadCheckout();
         }
 
         public void AddProductFromSearch()

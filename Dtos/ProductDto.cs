@@ -1,4 +1,5 @@
 using StockControl.Enums;
+using StockControl.Models;
 namespace StockControl.Dtos
 {
     public class ProductDto
@@ -21,5 +22,19 @@ namespace StockControl.Dtos
             Unit = unitType;
         }
         public ProductDto(){}
+
+        internal static ProductDto? FromModel(Product product)
+        {
+            return new ProductDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Barcode = product.Barcode,
+                Brand = product.Barcode,
+                Stock = product.Stock,
+                Price = product.Price,
+                Unit = product.Unit
+            };
+        }
     }
 }

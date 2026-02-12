@@ -17,9 +17,9 @@ namespace StockControl.ViewModels.Products
         private readonly ProductService _productService;
         private readonly ICollectionView _productsView;
         public event PropertyChangedEventHandler PropertyChanged;
-
         private Product? _selectedProduct;
-
+        public Action<Product?>? CloseAction { get; set; }
+        public ClientViewMode ViewMode { get; }
         public ObservableCollection<Product> Products { get; }
 
         private string _searchText;
@@ -43,16 +43,25 @@ namespace StockControl.ViewModels.Products
 
                 EditCommand.RaiseCanExecuteChanged();
                 DeleteCommand.RaiseCanExecuteChanged();
+                ConfirmCommand.RaiseCanExecuteChanged();
             }
         }
         public RelayCommand EditCommand { get; }
         public RelayCommand DeleteCommand { get; }
         public RelayCommand AddCommand { get; }
+        public RelayCommand ConfirmCommand { get; }
 
-        public ProductsViewModel(ProductService productService)
+        public ProductsViewModel(ProductService productService, bool CanEditOrDelete)
         {
             _productService = productService;
-
+            if (CanEditOrDelete)
+            {
+                ViewMode = ClientViewMode.Editable;
+            }
+            else
+            {
+                ViewMode = ClientViewMode.SelectOnly;
+            }
             Products = new ObservableCollection<Product>(_productService.GetProducts(false));
 
             _productsView = CollectionViewSource.GetDefaultView(Products);
@@ -66,6 +75,9 @@ namespace StockControl.ViewModels.Products
 
             DeleteCommand = new RelayCommand(
                 _ => DeleteProduct(SelectedProduct),
+                _ => SelectedProduct != null);
+            ConfirmCommand = new RelayCommand(
+                _ => CloseAction?.Invoke(SelectedProduct),
                 _ => SelectedProduct != null);
         }
         private void OnPropertyChanged([CallerMemberName] string prop = null)
@@ -108,7 +120,7 @@ namespace StockControl.ViewModels.Products
                     Owner = view
                 }.Show();
             };
-            vm.CloseAction = () => view.Close();
+            vm.CloseAction = success => view.Close();
 
             view.ShowDialog();
 
@@ -134,25 +146,43 @@ namespace StockControl.ViewModels.Products
         }
         private void OpenAddProduct()
         {
-            var vm = new AddProductViewModel(AppServices.ProductService);
+            ProductDto? createdProduct = null;
+            var vm = new AddProductViewModel(_productService);
             var view = new AddProductWindow
             {
                 DataContext = vm,
                 Owner = Application.Current.MainWindow
             };
 
-            vm.ShowSuccessAction = () =>
+            vm.CloseAction = success =>
             {
-                new SuccessWindow
+                if (success)
                 {
-                    Owner = view
-                }.Show();
+                    createdProduct = vm.CreatedProduct;
+                    new SuccessWindow
+                    {
+                        Owner = view
+                    }.ShowDialog();
+                }
+
+                view.Close();
             };
-            vm.CloseAction = () => view.Close();
+
             view.ShowDialog();
 
-            LoadProducts();
+            if (createdProduct != null)
+            {
+                LoadProducts();
+
+                SelectedProduct = Products.FirstOrDefault(p => p.Id == createdProduct.Id);
+             if (ViewMode == ClientViewMode.SelectOnly && SelectedProduct != null)
+                {
+                    CloseAction?.Invoke(SelectedProduct);
+                }
+            }
+
             _productsView.Refresh();
         }
+
     }
 }

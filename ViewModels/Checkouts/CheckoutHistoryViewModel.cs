@@ -69,7 +69,8 @@ namespace StockControl.ViewModels.Checkouts
             if (string.IsNullOrWhiteSpace(SearchText))
                 return true;
 
-            return Checkout.Client.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+            return Checkout.Client.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase) 
+                || Checkout.Client.LastName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
                 || Checkout.ID.ToString().Contains(SearchText, StringComparison.OrdinalIgnoreCase);
         }
         public event PropertyChangedEventHandler PropertyChanged;

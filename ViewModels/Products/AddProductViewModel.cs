@@ -18,8 +18,8 @@ namespace StockControl.ViewModels.Products
         public string Title => IsEditMode ? "Editar producto" : "Agregar producto";
 
         public Action? ShowSuccessAction { get; set; }
-
-        public Action? CloseAction { get; set; }
+        public ProductDto? CreatedProduct { get; private set; }
+        public Action<bool>? CloseAction;
         private bool _isSuccess;
         public bool IsSuccess
         {
@@ -33,7 +33,7 @@ namespace StockControl.ViewModels.Products
             _productService = productService;
             _Product = new ProductDto();
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
-            CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
+            CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
 
             UnitTypes = Enum.GetValues(typeof(UnitType));
         }
@@ -122,12 +122,13 @@ private void Save()
         else
         {
             _productService.AddProduct(_Product);
+            CreatedProduct =  ProductDto.FromModel(_productService.GetProductByBarcode(_Product.Barcode));
         }
 
         ShowSuccessAction?.Invoke();
                     Task.Delay(600).ContinueWith(_ =>
                         Application.Current.Dispatcher.Invoke(() =>
-                            CloseAction?.Invoke()));
+                            CloseAction?.Invoke(true)));
         }
     catch(Exception ex)
         {

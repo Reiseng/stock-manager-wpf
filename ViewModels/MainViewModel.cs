@@ -49,7 +49,7 @@ namespace StockControl.ViewModels
             {
                 CurrentView = new ProductView
                 {
-                    DataContext = new ProductsViewModel(AppServices.ProductService)
+                    DataContext = new ProductsViewModel(AppServices.ProductService, CanEditOrDelete: true)
                 };
             });
 
@@ -83,20 +83,6 @@ namespace StockControl.ViewModels
         protected void OnPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-        public void ShowAddProduct()
-        {
-            CurrentView = new AddProductView
-            {
-                DataContext = new AddProductViewModel(AppServices.ProductService)
-            };
-        }
-        public void ShowViewProduct()
-        {
-            CurrentView = new ProductView
-            {
-                DataContext = new ProductsViewModel(AppServices.ProductService)
-            };
         }
     }
 }

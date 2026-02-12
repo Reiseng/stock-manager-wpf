@@ -10,6 +10,8 @@ public enum UnitType
     [Description("Litros")]
     Liter = 2,
     [Description("Caja")]
-    Box = 3
+    Box = 3,
+    [Description("Servicio")]
+    Service = 4
 }
 }
