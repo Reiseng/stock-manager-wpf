@@ -14,6 +14,7 @@ public class CheckoutItemDto
         {
             return new CheckoutItemDto
             {
+                ProductId = model.product.Id,
                 ProductName = model.product.Name,
                 Quantity = model.Quantity,
                 UnitPrice = model.UnitPrice

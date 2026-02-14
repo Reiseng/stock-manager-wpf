@@ -10,6 +10,7 @@ using StockControl.ViewModels.Checkouts;
 using StockControl.Views.Checkouts;
 using System.Windows;
 using StockControl.ViewModels.Settings;
+using StockControl.Views;
 
 namespace StockControl.ViewModels
 {
@@ -25,7 +26,8 @@ namespace StockControl.ViewModels
                 OnPropertyChanged(nameof(CurrentView));
             }
         }
-
+        public ICommand ShowMainViewCommand { get; }
+        public ICommand HelpCommand { get; }
         public ICommand ShowProductsCommand { get; }
         public ICommand ShowClientsCommand { get; }
         public ICommand ShowUsersCommand { get; }
@@ -34,7 +36,7 @@ namespace StockControl.ViewModels
         public ICommand OpenCheckoutCommand =>
             new RelayCommand(_ =>
             {
-                var vm = new CheckoutViewModel(AppServices.CheckoutService);
+                var vm = new CheckoutViewModel();
                 var view = new CheckoutWindow
                 {
                     DataContext = vm,
@@ -44,6 +46,10 @@ namespace StockControl.ViewModels
             });
         public MainWindowViewModel()
         {
+            if (CurrentView == null)
+            {
+                CurrentView = new MainView();
+            }
             // Every command sets the CurrentView to the appropriate View with its ViewModel
             ShowProductsCommand = new RelayCommand(_ =>
             {
@@ -76,6 +82,10 @@ namespace StockControl.ViewModels
             ShowSettingsCommand = new RelayCommand(_ =>
             {
                 CurrentView = new SettingsPanelView{ DataContext = new SettingsViewModel(AppServices.CompanyService)};
+            });
+            ShowMainViewCommand = new RelayCommand(_ =>
+            {
+                CurrentView = new MainView();  
             });
         }
 

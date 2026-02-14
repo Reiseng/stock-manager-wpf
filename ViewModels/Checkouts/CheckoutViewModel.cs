@@ -1,9 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Security.AccessControl;
 using System.Windows;
-using QuestPDF.Fluent;
 using StockControl.Dtos;
 using StockControl.Enums;
 using StockControl.Models;
@@ -53,6 +51,7 @@ namespace StockControl.ViewModels.Checkouts
                 OnPropertyChanged(nameof(SubTotal));
                 OnPropertyChanged(nameof(ClientFullName));
                 OnPropertyChanged(nameof(ClientDocument));
+                OnPropertyChanged(nameof(Checkout.Items));
             }
         }
         public InvoiceType SelectedInvoiceType
@@ -85,11 +84,11 @@ namespace StockControl.ViewModels.Checkouts
         public decimal SubTotal => Checkout?.SubTotal ?? 0;
         public decimal Total => Checkout?.SubTotal * (1+ (_company?.tax/100 ?? 0)) ?? 0;
 
-        public CheckoutViewModel(CheckoutService checkoutService)
+        public CheckoutViewModel()
         {
             _company = AppServices.CompanyService.GetCompanyInfo();
             InvoiceTypes = Enum.GetValues(typeof(InvoiceType));
-            _checkoutService = checkoutService;
+            _checkoutService = AppServices.CheckoutService;
             ConfirmCheckoutCommand = new RelayCommand(
                 _ => ConfirmCheckout(),
                 _ => Checkout.Items.Any()
@@ -124,8 +123,16 @@ namespace StockControl.ViewModels.Checkouts
                 MessageBox.Show(ex.Message);
             }
         }
-        private void LoadCheckout()
+        public void LoadCheckout()
         {
+            if (Checkout != null)
+            {
+                foreach(var item in Checkout.Items)
+                {
+                    _checkoutService.SetQuantity(item.ProductId, item.Quantity);
+                    _checkoutService.SetProductPrice(item.ProductId, item.UnitPrice);
+                }
+            }
             var checkout = _checkoutService.GetCurrentCheckout();
 
             if (Checkout == null)
@@ -133,10 +140,9 @@ namespace StockControl.ViewModels.Checkouts
                 Checkout = CheckoutDto.FromModel(checkout);
                 return;
             }
-
             Checkout.Items.Clear();
-
             foreach (var item in checkout.Items)
+
                 Checkout.Items.Add(CheckoutItemDto.FromModel(item));
 
             OnPropertyChanged(nameof(Total));
@@ -263,6 +269,7 @@ namespace StockControl.ViewModels.Checkouts
                         return;
 
                     _checkoutService.AddProduct(product, 1);
+                    Checkout = CheckoutDto.FromModel(_checkoutService.GetCurrentCheckout());
                     LoadCheckout();
                     SearchResults.Clear();
                     return;

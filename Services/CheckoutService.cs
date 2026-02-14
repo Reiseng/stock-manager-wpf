@@ -140,10 +140,33 @@ namespace StockControl.Services
 
             return _currentCheckout;
         }
+        public void SetQuantity(int productId, decimal quantity)
+        {
+            var item = _currentCheckout.Items
+                .FirstOrDefault(i => i.product.Id == productId);
 
+            if (item == null) return;
+
+            if (quantity <= 0)
+                _currentCheckout.Items.Remove(item);
+            else
+                item.Quantity = quantity;
+        }
         internal void ClearCheckout()
         {
             StartCheckout();
+        }
+        public void SetProductPrice(int productId, decimal price)
+        {
+            var item = _currentCheckout.Items
+                .FirstOrDefault(i => i.product.Id == productId);
+
+            if (item == null) return;
+
+            if (price <= 0)
+                throw new Exception("El precio debe ser mayor a 0");
+            else
+                item.UnitPrice = price;
         }
     }
 }

@@ -1,0 +1,56 @@
+<UserControl x:Class="StockControl.Views.MainView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Orientation="Horizontal" Grid.Row="0"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,0,0,20">
+
+            <TextBlock Text="StockControl"
+                    FontSize="24"
+                    FontWeight="Bold"/>
+
+            <TextBlock Text=" | Usuario: Facundo"
+                    Margin="20,0,0,0"/>
+
+        </StackPanel>
+
+        <!-- Welcome -->
+        <TextBlock Grid.Row="1"
+                Text="Bienvenido 👋"
+                FontSize="20"
+                FontWeight="SemiBold"
+                Margin="0,0,0,20"/>
+
+        <!-- Dashboard -->
+        <UniformGrid Grid.Row="2" Columns="2" Rows="2">
+
+            <Border Margin="10" Padding="15" Background="#EEE">
+                <TextBlock Text="Productos: 120"/>
+            </Border>
+
+            <Border Margin="10" Padding="15" Background="#EEE">
+                <TextBlock Text="Ventas hoy: 15"/>
+            </Border>
+
+            <Border Margin="10" Padding="15" Background="#EEE">
+                <TextBlock Text="Stock bajo: 4"/>
+            </Border>
+
+            <Border Margin="10" Padding="15" Background="#EEE">
+                <TextBlock Text="Ingresos: $25.000"/>
+            </Border>
+
+        </UniformGrid>
+
+    </Grid>
+</UserControl>

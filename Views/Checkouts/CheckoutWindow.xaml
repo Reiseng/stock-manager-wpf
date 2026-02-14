@@ -1,9 +1,12 @@
 <Window x:Class="StockControl.Views.Checkouts.CheckoutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:StockControl.ViewModels.Checkouts"
         Title="Venta"
         WindowState="Maximized">
-
+    <Window.DataContext>
+        <vm:CheckoutViewModel/>
+    </Window.DataContext>
 <DockPanel>
 
     <!-- Lateral Menu -->
@@ -86,6 +89,7 @@
             <!-- input lector -->
             <Grid Grid.Column="2" VerticalAlignment="Center">
             <TextBox 
+                    x:Name="SearchBox"
                     Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
                     FontSize="16"
                     Height="36"
@@ -106,16 +110,19 @@
         <DataGrid Grid.Row="1"
                   ItemsSource="{Binding Checkout.Items}"
                   AutoGenerateColumns="False"
-                  CanUserAddRows="False">
+                  CanUserAddRows="False"
+                  CellEditEnding="DataGrid_CellEditEnding">
 
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Cant." Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="80" IsReadOnly="False"/>
+                <DataGridTextColumn Header="Cant." 
+                                    Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" 
+                                    Width="80"/>
                 <DataGridTextColumn Header="Tipo"
                                     Binding="{Binding Unit,
                                         Converter={StaticResource EnumDescriptionConverter}}"
                                     Width="80" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" Width="100"/>
                 <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="100" IsReadOnly="True"/>
                 <DataGridTemplateColumn Header="Acciones" Width="120">
                     <DataGridTemplateColumn.CellTemplate>

@@ -10,15 +10,21 @@
 
     <DockPanel>
         <!-- Lateral menu -->
-        <StackPanel DockPanel.Dock="Right" Width="200" Background="#2D2D30">
+        <DockPanel DockPanel.Dock="Right" Width="200" Background="#2D2D30">
+            <Button DockPanel.Dock="Bottom"
+                    Content="Ayuda"
+                    Command="{Binding HelpCommand}"
+                    Margin="10"/>
+            <StackPanel>
+            <Button Content="Inicio" Command="{Binding ShowMainViewCommand}" Margin="10" Height="40"/>
             <Button Content="Productos" Command="{Binding ShowProductsCommand}" Margin="10" Height="40"/>
             <Button Content="Clientes" Command="{Binding ShowClientsCommand}" Margin="10" Height="40"/>
             <Button Content="Vender" Margin="10" Height="40" Command="{Binding OpenCheckoutCommand}"/>
             <Button Content="Historial de ventas" Margin="10" Height="40" Command="{Binding ShowCheckoutHistoryCommand}"/>
             <Button Content="Usuarios" Command="{Binding ShowUsersCommand}" Margin="10" Height="40"/>
             <Button Content="Configuración" Command="{Binding ShowSettingsCommand}" Margin="10" Height="40"/>
-        </StackPanel>
-
+            </StackPanel>
+        </DockPanel>
         <!-- Dinamic content -->
         <ContentControl Content="{Binding CurrentView}" />
     </DockPanel>

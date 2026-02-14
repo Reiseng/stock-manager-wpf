@@ -9,6 +9,7 @@
         x:Key="StringNullOrEmptyToVisibilityConverter"/>
     <local:ModeToVisibilityConverter
         x:Key="ModeToVisibilityConverter"/>
+    <local:DataGridNumeric x:Key="DataGridNumeric"/>
     <!-- Button Style -->
     <Style TargetType="Button">
         <Setter Property="Width" Value="Auto"/>
