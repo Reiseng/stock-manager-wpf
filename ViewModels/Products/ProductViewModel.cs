@@ -19,7 +19,7 @@ namespace StockControl.ViewModels.Products
         public event PropertyChangedEventHandler PropertyChanged;
         private Product? _selectedProduct;
         public Action<Product?>? CloseAction { get; set; }
-        public ClientViewMode ViewMode { get; }
+        public ViewMode ViewMode { get; }
         public ObservableCollection<Product> Products { get; }
 
         private string _searchText;
@@ -56,11 +56,11 @@ namespace StockControl.ViewModels.Products
             _productService = productService;
             if (CanEditOrDelete)
             {
-                ViewMode = ClientViewMode.Editable;
+                ViewMode = ViewMode.Editable;
             }
             else
             {
-                ViewMode = ClientViewMode.SelectOnly;
+                ViewMode = ViewMode.SelectOnly;
             }
             Products = new ObservableCollection<Product>(_productService.GetProducts(false));
 
@@ -175,7 +175,7 @@ namespace StockControl.ViewModels.Products
                 LoadProducts();
 
                 SelectedProduct = Products.FirstOrDefault(p => p.Id == createdProduct.Id);
-             if (ViewMode == ClientViewMode.SelectOnly && SelectedProduct != null)
+             if (ViewMode == ViewMode.SelectOnly && SelectedProduct != null)
                 {
                     CloseAction?.Invoke(SelectedProduct);
                 }

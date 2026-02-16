@@ -19,7 +19,7 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT Id, Dni, Username, PasswordHash, Role, IsActive
+                SELECT ID, Username, PasswordHash, Role, IsActive
                 FROM Users
                 ";
             if (!includeInactive)
@@ -47,15 +47,15 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT Id, Dni, Username, PasswordHash, Role, IsActive
+                SELECT ID, Username, PasswordHash, Role, IsActive
                 FROM Users
-                WHERE Id = @id";
+                WHERE ID = @id";
             if (!includeInactive)
             {
                 command.CommandText += " AND IsActive = 1";
             }
             command.CommandText += ";";
-            command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@id", id);
             using var reader = command.ExecuteReader();
             if (reader.Read())
             {
@@ -76,7 +76,7 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT Id, Dni, Username, PasswordHash, Role, IsActive
+                SELECT ID, Username, PasswordHash, Role, IsActive
                 FROM Users
                 WHERE Username = @username";
             if (!includeInactive)
@@ -84,7 +84,7 @@ namespace StockControl.Data
                 command.CommandText += " AND IsActive = 1";
             }
             command.CommandText += ";";
-            command.Parameters.AddWithValue("@Username", username);
+            command.Parameters.AddWithValue("@username", username);
             using var reader = command.ExecuteReader();
             if (reader.Read())
             {
@@ -123,7 +123,7 @@ namespace StockControl.Data
             command.CommandText = @"
                 UPDATE Users
                 SET IsActive = 0
-                WHERE Id = @id;
+                WHERE ID = @id;
                 ";
             command.Parameters.AddWithValue("@id", id);
             command.ExecuteNonQuery();

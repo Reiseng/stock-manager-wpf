@@ -1,4 +1,5 @@
 using StockControl.Data;
+using StockControl.Dtos;
 using StockControl.Enums;
 using StockControl.Models;
 using StockControl.Utils.PasswordHelper;
@@ -66,6 +67,13 @@ namespace StockControl.Services
 
                 _repository.Add(user);
             }
+        }
+        public void Remove(UserDto userDto)
+        {
+            User? user = _repository.GetByID(userDto.ID, false);
+            if (user == null)
+                throw new Exception("Usuario no encontrado");
+            _repository.Remove(user.ID);
         }
         public void Update(UserDto userDto)
         {

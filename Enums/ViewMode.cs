@@ -1,4 +1,4 @@
-public enum ClientViewMode
+public enum ViewMode
 {
     SelectOnly,
     Editable

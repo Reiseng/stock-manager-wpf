@@ -1,6 +1,7 @@
 using StockControl.Enums;
+using StockControl.Models;
 
-namespace StockControl.Models
+namespace StockControl.Dtos
 {
     public class UserDto{
         public int ID { get; set; }

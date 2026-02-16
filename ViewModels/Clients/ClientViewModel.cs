@@ -31,7 +31,7 @@ namespace StockControl.ViewModels.Clients
             }
         }
         public ObservableCollection<Client> Clients { get; }
-        public ClientViewMode ViewMode { get; }
+        public ViewMode ViewMode { get; }
         public Action<Client?>? CloseAction { get; set; }
         private string _searchText;
         public string SearchText
@@ -53,9 +53,9 @@ namespace StockControl.ViewModels.Clients
         public ClientsViewModel(ClientService ClientService, bool canEditClients)
         {
             if (canEditClients)
-                ViewMode = ClientViewMode.Editable;
+                ViewMode = ViewMode.Editable;
             else
-                ViewMode = ClientViewMode.SelectOnly;
+                ViewMode = ViewMode.SelectOnly;
             _ClientService = ClientService;
             Clients = new ObservableCollection<Client>(_ClientService.GetClients(false));
 
@@ -180,7 +180,7 @@ namespace StockControl.ViewModels.Clients
                 LoadClients();
 
                 SelectedClient = Clients.FirstOrDefault(c => c.ID == createdClient.ID);
-             if (ViewMode == ClientViewMode.SelectOnly && SelectedClient != null)
+             if (ViewMode == ViewMode.SelectOnly && SelectedClient != null)
                 {
                     CloseAction?.Invoke(SelectedClient);
                 }

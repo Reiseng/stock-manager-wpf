@@ -1,4 +1,3 @@
-using System.Windows.Documents.DocumentStructures;
 using StockControl.Enums;
 
 namespace StockControl.Models

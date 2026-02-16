@@ -11,6 +11,7 @@ using StockControl.Views.Checkouts;
 using System.Windows;
 using StockControl.ViewModels.Settings;
 using StockControl.Views;
+using StockControl.ViewModels.Users;
 
 namespace StockControl.ViewModels
 {
@@ -75,8 +76,8 @@ namespace StockControl.ViewModels
             });
             ShowUsersCommand = new RelayCommand(_ =>
             {
-                // If we need internal navegation on UserPanelView, we can set its DataContext here
-                CurrentView = new UsersPanelView();
+                // If we need internal navegation on UserView, we can set its DataContext here
+                CurrentView = new UsersView{ DataContext = new UserViewModel(AppServices.UserService)};
             });
 
             ShowSettingsCommand = new RelayCommand(_ =>
