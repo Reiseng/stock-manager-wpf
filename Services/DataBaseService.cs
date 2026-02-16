@@ -19,7 +19,14 @@ namespace StockControl.Services.Database
 
             var command = connection.CreateCommand();
             command.CommandText =
-            @"
+            @"  
+                CREATE TABLE IF NOT EXISTS Users (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Username TEXT NOT NULL UNIQUE,
+                    PasswordHash TEXT NOT NULL,
+                    Role INTEGER NOT NULL,
+                    IsActive INTEGER NOT NULL DEFAULT 1
+                );
                 CREATE TABLE IF NOT EXISTS Clients (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Dni TEXT NOT NULL UNIQUE,

@@ -4,6 +4,10 @@ using StockControl.Services;
 public static class AppServices
 {
     public static DatabaseContext DatabaseContext { get; set; }
+
+    public static UserPersistence UserPersistence { get; set; }
+    public static UserService UserService { get; set; }
+
     public static ProductPersistence ProductPersistence { get; set; }
     public static ProductService ProductService { get; set; }
 

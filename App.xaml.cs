@@ -29,9 +29,13 @@ public partial class App : Application
             var dbInitializer = new DatabaseInitializer(AppServices.DatabaseContext);
             dbInitializer.Initialize();
 
+            AppServices.UserPersistence = 
+                new UserPersistence(AppServices.DatabaseContext);
+            AppServices.UserService = 
+                new UserService(AppServices.UserPersistence);
+
             AppServices.ProductPersistence =
                 new ProductPersistence(AppServices.DatabaseContext);
-
             AppServices.ProductService =
                 new ProductService(AppServices.ProductPersistence);
             AppServices.ClientPersistence =
