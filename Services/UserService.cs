@@ -9,7 +9,7 @@ namespace StockControl.Services
     public class UserService
     {
         private readonly UserPersistence _repository;
-
+        public User CurrentUser { get; set; }
         public UserService(UserPersistence repository)
         {
             _repository = repository;
@@ -97,19 +97,29 @@ namespace StockControl.Services
             }
             _repository.Update(user);
         }
-        public bool Login(string username, string password)
+        public User Login(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username))
-                    return false;
+                    throw new Exception("El usuario no puede estar vacio");
             if (string.IsNullOrWhiteSpace(password))
-                    return false;
+                    throw new Exception("La contraseña no puede estar vacia");
             var user = _repository.GetByUsername(username, false);
 
-            if (user != null && !user.IsActive )
-                return false;
-            if (user == null)
-                return false;
-            return PasswordHelper.Verify(password, user.Password);
+            if (user == null || (user != null && !user.IsActive))
+                throw new Exception("El usuario no existe");
+            if(PasswordHelper.Verify(password, user.Password))
+            {
+                CurrentUser = user;
+                return CurrentUser;
+            }
+            else
+            {
+                throw new Exception("Contraseña invalida");
+            }
+        }
+        public void Loggout()
+        {
+            CurrentUser = null;
         }
     }
 }

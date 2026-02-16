@@ -19,7 +19,7 @@
                     FontSize="24"
                     FontWeight="Bold"/>
 
-            <TextBlock Text=" | Usuario: Facundo"
+            <TextBlock Text="{Binding Title}"
                     Margin="20,0,0,0"/>
 
         </StackPanel>
@@ -39,7 +39,10 @@
             </Border>
 
             <Border Margin="10" Padding="15" Background="#EEE">
-                <TextBlock Text="Ventas hoy: 15"/>
+                <TextBlock Text="Ventas hoy: 15"
+                           Visibility="{Binding ViewMode,
+                                            Converter={StaticResource ModeToVisibilityConverter},
+                                            ConverterParameter=AdminOnly}"/>
             </Border>
 
             <Border Margin="10" Padding="15" Background="#EEE">
@@ -47,7 +50,10 @@
             </Border>
 
             <Border Margin="10" Padding="15" Background="#EEE">
-                <TextBlock Text="Ingresos: $25.000"/>
+                <TextBlock Text="Ingresos: $25.000"
+                           Visibility="{Binding ViewMode,
+                                            Converter={StaticResource ModeToVisibilityConverter},
+                                            ConverterParameter=AdminOnly}"/>
             </Border>
 
         </UniformGrid>

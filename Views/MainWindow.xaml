@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:StockControl.ViewModels"
-        Title="Stock Control" Height="Auto" Width="Auto">
+        Title="Dashboard" Height="Auto" Width="Auto">
 
     <Window.DataContext>
         <vm:MainWindowViewModel/>
@@ -12,6 +12,10 @@
         <!-- Lateral menu -->
         <DockPanel DockPanel.Dock="Right" Width="200" Background="#2D2D30">
             <Button DockPanel.Dock="Bottom"
+                    Content="Cerrar sesión"
+                    Command="{Binding LoggoutCommand}"
+                    Margin="10"/>
+            <Button DockPanel.Dock="Bottom"
                     Content="Ayuda"
                     Command="{Binding HelpCommand}"
                     Margin="10"/>
@@ -20,9 +24,27 @@
             <Button Content="Productos" Command="{Binding ShowProductsCommand}" Margin="10" Height="40"/>
             <Button Content="Clientes" Command="{Binding ShowClientsCommand}" Margin="10" Height="40"/>
             <Button Content="Vender" Margin="10" Height="40" Command="{Binding OpenCheckoutCommand}"/>
-            <Button Content="Historial de ventas" Margin="10" Height="40" Command="{Binding ShowCheckoutHistoryCommand}"/>
-            <Button Content="Usuarios" Command="{Binding ShowUsersCommand}" Margin="10" Height="40"/>
-            <Button Content="Configuración" Command="{Binding ShowSettingsCommand}" Margin="10" Height="40"/>
+            <Button Content="Historial de ventas" 
+                Margin="10" 
+                Height="40" 
+                Command="{Binding ShowCheckoutHistoryCommand}"
+                Visibility="{Binding ViewMode,
+                                            Converter={StaticResource ModeToVisibilityConverter},
+                                            ConverterParameter=AdminOnly}"/>
+            <Button Content="Usuarios" 
+                Command="{Binding ShowUsersCommand}" 
+                Margin="10" 
+                Height="40"
+                Visibility="{Binding ViewMode,
+                                            Converter={StaticResource ModeToVisibilityConverter},
+                                            ConverterParameter=AdminOnly}"/>
+            <Button Content="Configuración" 
+                Command="{Binding ShowSettingsCommand}" 
+                Margin="10" 
+                Height="40"
+                Visibility="{Binding ViewMode,
+                                            Converter={StaticResource ModeToVisibilityConverter},
+                                            ConverterParameter=AdminOnly}"/>
             </StackPanel>
         </DockPanel>
         <!-- Dinamic content -->

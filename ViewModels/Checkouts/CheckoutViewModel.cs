@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using StockControl.Dtos;
@@ -8,6 +9,7 @@ using StockControl.Models;
 using StockControl.Services;
 using StockControl.ViewModels.Clients;
 using StockControl.ViewModels.Products;
+using StockControl.Views;
 using StockControl.Views.Clients;
 using StockControl.Views.Products;
 using StockControl.Views.Windows;
@@ -26,6 +28,8 @@ namespace StockControl.ViewModels.Checkouts
                 OnPropertyChanged();
             }
         }
+        public RoleMode ViewMode { get; }
+        public User CurrentUser{ get; }
         public Array InvoiceTypes { get; }
         public Checkout lastCheckout {get ; set; }
         public ObservableCollection<CheckoutItemDto> Items
@@ -80,12 +84,23 @@ namespace StockControl.ViewModels.Checkouts
         public RelayCommand ConfirmCheckoutCommand { get; }
         public RelayCommand CancelCommand { get; }
         public RelayCommand RemoveItemCommand { get; }
+        public RelayCommand LoggoutCommand { get; }
 
         public decimal SubTotal => Checkout?.SubTotal ?? 0;
         public decimal Total => Checkout?.SubTotal * (1+ (_company?.tax/100 ?? 0)) ?? 0;
 
         public CheckoutViewModel()
         {
+            CurrentUser = AppServices.UserService.CurrentUser;
+            if (CurrentUser.Role == RoleType.Admin){
+                ViewMode = RoleMode.AdminOnly;
+            }
+            if (CurrentUser.Role == RoleType.Cashier){
+                ViewMode = RoleMode.CashierOnly;
+            }
+            if (CurrentUser.Role == RoleType.Repository){
+                ViewMode = RoleMode.RepositoryOnly;
+            }
             _company = AppServices.CompanyService.GetCompanyInfo();
             InvoiceTypes = Enum.GetValues(typeof(InvoiceType));
             _checkoutService = AppServices.CheckoutService;
@@ -99,6 +114,27 @@ namespace StockControl.ViewModels.Checkouts
             AddClientCommand = new RelayCommand(_ => OpenAddClient());
             AddProductCommand = new RelayCommand(_ => OpenAddProduct());
             RemoveItemCommand = new RelayCommand(item => RemoveItem((CheckoutItemDto)item));
+            LoggoutCommand = new RelayCommand(_ =>
+            {
+            if (MessageBox.Show(
+                                $"¿Seguro de cerrar sesión?",
+                                "Confirmar",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                                return;
+                AppServices.UserService.Loggout();
+
+                var loginVm = new LogginWindowViewModel();
+                var loginView = new LogginWindow
+                {
+                    DataContext = loginVm
+                };
+
+                loginView.Show();
+
+                Application.Current.MainWindow.Close();
+                Application.Current.MainWindow = loginView;
+            });
             
             LoadCheckout();
         }

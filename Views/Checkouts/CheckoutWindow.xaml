@@ -15,6 +15,14 @@
                Background="#2D2D30"
                LastChildFill="True">
 
+        <Button DockPanel.Dock="Bottom"
+                Content="Cerrar sesión"
+                Command="{Binding LoggoutCommand}"
+                Margin="10"
+                Visibility="{Binding ViewMode,
+                                            Converter={StaticResource ModeToVisibilityConverter},
+                                            ConverterParameter=CashierOnly}"/>
+
         <!-- Bottom button -->
         <Button DockPanel.Dock="Bottom"
                 Content="Cancelar venta"

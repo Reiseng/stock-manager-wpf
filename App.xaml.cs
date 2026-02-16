@@ -33,7 +33,6 @@ public partial class App : Application
                 new UserPersistence(AppServices.DatabaseContext);
             AppServices.UserService = 
                 new UserService(AppServices.UserPersistence);
-
             AppServices.ProductPersistence =
                 new ProductPersistence(AppServices.DatabaseContext);
             AppServices.ProductService =

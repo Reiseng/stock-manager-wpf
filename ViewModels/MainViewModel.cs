@@ -12,11 +12,16 @@ using System.Windows;
 using StockControl.ViewModels.Settings;
 using StockControl.Views;
 using StockControl.ViewModels.Users;
+using StockControl.Models;
+using StockControl.Enums;
 
 namespace StockControl.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
+        public RoleMode ViewMode { get; }
+        public User CurrentUser{ get; }
+        public string Title { get; private set; }
         private object _currentView;
         public object CurrentView
         {
@@ -34,6 +39,7 @@ namespace StockControl.ViewModels
         public ICommand ShowUsersCommand { get; }
         public ICommand ShowSettingsCommand { get; }
         public ICommand ShowCheckoutHistoryCommand {get; }
+        public ICommand LoggoutCommand { get; }
         public ICommand OpenCheckoutCommand =>
             new RelayCommand(_ =>
             {
@@ -47,10 +53,49 @@ namespace StockControl.ViewModels
             });
         public MainWindowViewModel()
         {
+            CurrentUser = AppServices.UserService.CurrentUser;
+            Title = $"Usuario: {CurrentUser.Username}";
+            if (CurrentUser.Role == RoleType.Admin){
+                ViewMode = RoleMode.AdminOnly;
+            }
+            if (CurrentUser.Role == RoleType.Cashier){
+                ViewMode = RoleMode.CashierOnly;
+            }
+            if (CurrentUser.Role == RoleType.Repository){
+                ViewMode = RoleMode.RepositoryOnly;
+            }
             if (CurrentView == null)
             {
-                CurrentView = new MainView();
+                CurrentView = new MainView
+                {
+                    DataContext = this
+                };
             }
+            LoggoutCommand = new RelayCommand(_ =>
+            {
+            if (MessageBox.Show(
+                                $"¿Seguro de cerrar sesión?",
+                                "Confirmar",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                                return;
+                AppServices.UserService.Loggout();
+
+                // Abrir login
+                var loginVm = new LogginWindowViewModel();
+                var loginView = new LogginWindow
+                {
+                    DataContext = loginVm
+                };
+
+                loginView.Show();
+
+                // Cerrar ventana actual
+                Application.Current.MainWindow.Close();
+
+                // Setear login como principal
+                Application.Current.MainWindow = loginView;
+            });
             // Every command sets the CurrentView to the appropriate View with its ViewModel
             ShowProductsCommand = new RelayCommand(_ =>
             {
@@ -86,7 +131,10 @@ namespace StockControl.ViewModels
             });
             ShowMainViewCommand = new RelayCommand(_ =>
             {
-                CurrentView = new MainView();  
+                CurrentView = new MainView
+                {
+                    DataContext = this
+                };  
             });
         }
 
