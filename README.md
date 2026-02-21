@@ -1,10 +1,12 @@
-Stock Manager (WPF)
+# Stock Manager (WPF)
 
 Desktop application for stock, sales, and basic business management, developed in C# using WPF (.NET 9).
 
 This project simulates a small business management system including inventory control, user roles, and sales operations.
 
-🛠️ Technologies Used
+---
+
+## 🛠️ Technologies Used
 
 - C#
 - .NET 9 (WPF)
@@ -14,7 +16,9 @@ This project simulates a small business management system including inventory co
 - Layered Architecture
 - Git
 
-🔑 Default Credentials
+---
+
+## 🔑 Default Credentials
 
 On first run, the application automatically creates a default administrator account if no active admin exists.
 - Username: Admin
@@ -22,7 +26,9 @@ On first run, the application automatically creates a default administrator acco
 
 It is recommended to change the password after first login.
 
-📌 Features
+---
+
+## 📌 Features
 
 - Inventory Management
 - Create, update and deactivate products
@@ -47,7 +53,9 @@ It is recommended to change the password after first login.
 - Automatic database initialization
 - Layered architecture (Repository + Service)
 
-🧩 Architecture Overview
+---
+
+## 🧩 Architecture Overview
 
 The application follows a layered architecture:
 
@@ -60,7 +68,9 @@ The application follows a layered architecture:
   
 This structure allows future scalability and maintainability.
 
-🚀 How to Run
+---
+
+## 🚀 How to Run
 
 Option 1 – Run from source
 - Clone the repository
@@ -70,7 +80,9 @@ Option 1 – Run from source
 Option 2 – Download Release
 - Download the latest release from the GitHub Releases section and run the executable.
 
-🔮 Planned Improvements
+---
+
+## 🔮 Planned Improvements
 
 - Ticket / invoice PDF generation
 - Reporting module
@@ -80,7 +92,9 @@ Option 2 – Download Release
 - Versioning system
 - Backup & restore functionality
 
-📚 Purpose of the Project
+---
+
+## 📚 Purpose of the Project
 
 - This project demonstrates:
 - Clean architecture principles
@@ -90,7 +104,9 @@ Option 2 – Download Release
 - Desktop application development with WPF
 - Real-world inventory and billing logic
 
-📄 License
+---
+
+## 📄 License
 
 - MIT License.
 
