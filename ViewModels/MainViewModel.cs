@@ -21,7 +21,29 @@ namespace StockControl.ViewModels
     {
         public RoleMode ViewMode { get; }
         public User CurrentUser{ get; }
+        private IReadOnlyList<Product> allproducts;
+        private IReadOnlyList<Checkout> todaycheckouts;
         public string Title { get; private set; }
+        private string _totalstock { get; set; }
+        public string TotalStock
+        {
+            get=> _totalstock;
+            set
+            {
+                _totalstock = value;
+                OnPropertyChanged(nameof(_totalstock));
+            }
+        }
+        private string _todaysell { get; set; }
+        public string TodaySell
+        {
+            get=> _todaysell;
+            set
+            {
+                _todaysell = value;
+                OnPropertyChanged(nameof(_todaysell));
+            }
+        }
         private object _currentView;
         public object CurrentView
         {
@@ -71,6 +93,7 @@ namespace StockControl.ViewModels
                     DataContext = this
                 };
             }
+            UpdateDashboard();
             LoggoutCommand = new RelayCommand(_ =>
             {
             if (MessageBox.Show(
@@ -137,7 +160,28 @@ namespace StockControl.ViewModels
                 };  
             });
         }
-
+        public void UpdateDashboard()
+        {
+            int count = 0;
+            allproducts = AppServices.ProductService.GetProducts(false);
+            decimal actualstock = 0.0m;
+            foreach (var product in allproducts)
+            {
+                actualstock += product.Stock;
+            }
+            _totalstock = $"Total productos: {actualstock}";
+            todaycheckouts = AppServices.CheckoutService.GetCheckouts();
+            foreach (var checkout in todaycheckouts)
+            {
+                if ((checkout.Date.Day == DateTime.Today.Day) &&
+                (checkout.Date.Month == DateTime.Today.Month) &&
+                (checkout.Date.Year == DateTime.Today.Year))
+                {
+                    count++;
+                }
+            }
+            _todaysell = $"Ventas de hoy: {count}";
+        }
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name)
         {

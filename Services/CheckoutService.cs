@@ -31,7 +31,7 @@ namespace StockControl.Services
                 throw new Exception("Id inválida");
             Checkout checkout = _repository.GetByID(id);
             if (checkout == null)
-                throw new Exception("El cliente no existe");
+                throw new Exception("No se encontró una factura con ese ID");
             return checkout;
         }
         public void StartCheckout()
@@ -92,11 +92,20 @@ namespace StockControl.Services
         {
             _currentCheckout.invoiceType = type;
         }
+        public void SetOperationType(OperationType type)
+        {
+            _currentCheckout.operationType = type;
+        }
         public Checkout ConfirmCheckout()
         {
             if (_currentCheckout.Items.Count == 0)
                 throw new Exception("El carrito está vacío");
-
+            if (_currentCheckout.operationType == OperationType.CreditNote ||
+                _currentCheckout.operationType == OperationType.DebitNote)
+            {
+                if (_currentCheckout.RelatedCheckoutId == null)
+                    throw new Exception("Debe vincularse a una factura existente");
+            }
             if (_currentCheckout.invoiceType == InvoiceType.AFacture ||
                 _currentCheckout.invoiceType == InvoiceType.BFacture)
             {
@@ -107,26 +116,35 @@ namespace StockControl.Services
             }
             else if (_currentCheckout.Client == null)
             {
-                _currentCheckout.Client = new Client
+                _currentCheckout.Client = clientService.GetFinalConsumer();
+            }
+            if (_currentCheckout.operationType == OperationType.Sale){
+            foreach (var item in _currentCheckout.Items)
                 {
-                    Name = "Consumidor Final"
-                };
+                    if (item.product.Stock < item.Quantity)
+                        throw new Exception(
+                            $"Stock insuficiente para {item.product.Name}"
+                        );
+                }
+                foreach (var item in _currentCheckout.Items)
+                {
+                    if (item.product.Unit != UnitType.Service){
+                        productService.DecreaseStock(
+                            item.product.Id,
+                            item.Quantity
+                        );
+                    }
+                }
             }
-            foreach (var item in _currentCheckout.Items)
-            {
-                if (item.product.Stock < item.Quantity)
-                    throw new Exception(
-                        $"Stock insuficiente para {item.product.Name}"
-                    );
-            }
-
-            foreach (var item in _currentCheckout.Items)
-            {
-                if (item.product.Unit != UnitType.Service){
-                    productService.DecreaseStock(
-                        item.product.Id,
-                        item.Quantity
-                    );
+            if (_currentCheckout.operationType == OperationType.CreditNote){
+                foreach (var item in _currentCheckout.Items)
+                {
+                    if (item.product.Unit != UnitType.Service){
+                        productService.IncreaseStock(
+                            item.product.Id,
+                            item.Quantity
+                        );
+                    }
                 }
             }
             _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total)*(1+(companyService.GetCompanyInfo().tax/100));

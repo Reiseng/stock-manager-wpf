@@ -28,9 +28,18 @@ namespace StockControl.ViewModels.Checkouts
                 OnPropertyChanged();
             }
         }
+        private string _RelatedCheckoutIdText;
+        public string RelatedCheckoutIdText { get => _RelatedCheckoutIdText;
+            set
+            {
+                _RelatedCheckoutIdText = value;
+                OnPropertyChanged();
+            }
+        }
         public RoleMode ViewMode { get; }
         public User CurrentUser{ get; }
         public Array InvoiceTypes { get; }
+        public Array OperationTypes { get; }
         public Checkout lastCheckout {get ; set; }
         public ObservableCollection<CheckoutItemDto> Items
             => Checkout.Items;
@@ -66,6 +75,20 @@ namespace StockControl.ViewModels.Checkouts
                 if (Checkout.InvoiceType != value)
                 {
                     Checkout.InvoiceType = value;
+                    _checkoutService.SetInvoiceType(value);
+                    OnPropertyChanged();
+                }
+            }
+        }
+        public OperationType SelectedOperationType
+        {
+            get => Checkout.OperationType;
+            set
+            {
+                if (Checkout.OperationType != value)
+                {
+                    Checkout.OperationType = value;
+                    _checkoutService.SetOperationType(value);
                     OnPropertyChanged();
                 }
             }
@@ -91,6 +114,8 @@ namespace StockControl.ViewModels.Checkouts
 
         public CheckoutViewModel()
         {
+            _checkoutService = AppServices.CheckoutService;
+            LoadCheckout();
             CurrentUser = AppServices.UserService.CurrentUser;
             if (CurrentUser.Role == RoleType.Admin){
                 ViewMode = RoleMode.AdminOnly;
@@ -103,7 +128,7 @@ namespace StockControl.ViewModels.Checkouts
             }
             _company = AppServices.CompanyService.GetCompanyInfo();
             InvoiceTypes = Enum.GetValues(typeof(InvoiceType));
-            _checkoutService = AppServices.CheckoutService;
+            OperationTypes = Enum.GetValues(typeof(OperationType));
             ConfirmCheckoutCommand = new RelayCommand(
                 _ => ConfirmCheckout(),
                 _ => Checkout.Items.Any()
@@ -136,7 +161,7 @@ namespace StockControl.ViewModels.Checkouts
                 Application.Current.MainWindow = loginView;
             });
             
-            LoadCheckout();
+            
         }
         private void RemoveItem(CheckoutItemDto item)
         {
@@ -189,7 +214,7 @@ namespace StockControl.ViewModels.Checkouts
         {
             try
             {
-                _checkoutService.SetInvoiceType(Checkout.InvoiceType);
+
                 if (Checkout.Client != null)
                 {
                     var client = AppServices.ClientService.GetClientByID(Checkout.Client.ID);
@@ -204,7 +229,7 @@ namespace StockControl.ViewModels.Checkouts
                 lastCheckout = _checkoutService.ConfirmCheckout();
                 OpenActions();
                 _checkoutService.StartCheckout();
-                Checkout = null;
+                Checkout = CheckoutDto.FromModel(_checkoutService.GetCurrentCheckout());
                 LoadCheckout();
                 OnPropertyChanged(nameof(ClientFullName));
                 OnPropertyChanged(nameof(ClientDocument));
@@ -289,7 +314,30 @@ namespace StockControl.ViewModels.Checkouts
                 OnPropertyChanged(nameof(Checkout.Items));
             LoadCheckout();
         }
-
+        public void SetRelatedCheckoutIdFromText()
+        {
+            try{
+            if (int.TryParse(RelatedCheckoutIdText, out int parsedValue))
+            {
+                _checkoutService.GetCheckoutByID(RelatedCheckoutIdText);
+                Checkout.RelatedCheckoutId = parsedValue;
+                _checkoutService.GetCurrentCheckout().RelatedCheckoutId = parsedValue;
+            }
+            else
+            {
+                Checkout.RelatedCheckoutId = null;
+                _checkoutService.GetCurrentCheckout().RelatedCheckoutId = null;
+            }
+        }        catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+             finally
+            {
+                RelatedCheckoutIdText = "";
+                OnPropertyChanged(nameof(Checkout));
+            }
+        }
         public void AddProductFromSearch()
         {
             if (string.IsNullOrWhiteSpace(ProductSearchText))
@@ -334,6 +382,7 @@ namespace StockControl.ViewModels.Checkouts
                 lastCheckout.ID.ToString(),
                 lastCheckout.Date,
                 lastCheckout.invoiceType,
+                lastCheckout.operationType,
                 _company!,
                 Checkout.Client!,
                 Checkout.Items.ToList(),

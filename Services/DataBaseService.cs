@@ -27,6 +27,11 @@ namespace StockControl.Services.Database
                     Role INTEGER NOT NULL,
                     IsActive INTEGER NOT NULL DEFAULT 1
                 );
+                INSERT INTO Users (Username, PasswordHash, Role, IsActive)
+                SELECT 'Admin', 'ZBGIDpYmoqYbL6pnHumsXg==|hf+NGcBFeOjGLSHlO8IL2P/ZldaxLZzKWAvddXyKb0U=', 0, 1
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM Users WHERE Role = 0 AND IsActive = 1
+                );
                 CREATE TABLE IF NOT EXISTS Clients (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Dni TEXT NOT NULL UNIQUE,
@@ -56,7 +61,9 @@ namespace StockControl.Services.Database
                 CREATE TABLE IF NOT EXISTS Checkouts (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ClientId INTEGER,
+                    RelatedCheckoutId INTEGER,
                     InvoiceType INTEGER NOT NULL,
+                    OperationType INTEGER NOT NULL,
                     Total REAL NOT NULL,
                     CreatedAt TEXT NOT NULL,
                     FOREIGN KEY(ClientId) REFERENCES Clients(Id)

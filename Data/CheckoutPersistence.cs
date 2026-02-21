@@ -53,7 +53,7 @@ namespace StockControl.Data
         using (var command = connection.CreateCommand())
         {
             command.CommandText = @"
-                SELECT Id, ClientId, InvoiceType, Total, CreatedAt
+                SELECT Id, ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId
                 FROM Checkouts;
             ";
 
@@ -68,8 +68,10 @@ namespace StockControl.Data
                         ? itemsByCheckout[checkoutId]
                         : new List<CheckoutItem>(),
                     (InvoiceType)reader.GetInt32(2),
-                    DateTime.Parse(reader.GetString(4)),
-                    reader.GetDecimal(3)
+                    (OperationType)reader.GetInt32(3),
+                    DateTime.Parse(reader.GetString(5)),
+                    reader.GetDecimal(4),
+                    reader.IsDBNull(6) ? null : reader.GetInt32(6)
                 );
                 checkout.ID = checkoutId;
                 checkouts.Add(checkout);
@@ -112,7 +114,7 @@ namespace StockControl.Data
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = @"
-                    SELECT Id, ClientId, InvoiceType, Total, CreatedAt
+                    SELECT Id, ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId
                     FROM Checkouts WHERE Id = @id;
                 ";
 
@@ -129,8 +131,10 @@ namespace StockControl.Data
                             ? itemsByCheckout[checkoutId]
                             : new List<CheckoutItem>(),
                         (InvoiceType)reader.GetInt32(2),
-                        DateTime.Parse(reader.GetString(4)),
-                        reader.GetDecimal(3)
+                        (OperationType)reader.GetInt32(3),
+                        DateTime.Parse(reader.GetString(5)),
+                        reader.GetDecimal(4),
+                        reader.IsDBNull(6) ? null : reader.GetInt32(6)
                     );
                     checkout.ID = checkoutId;
                     return checkout;
@@ -144,14 +148,16 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO Checkouts (ClientId, InvoiceType, Total, CreatedAt)
-                VALUES (@clientId, @invoiceType, @total, @createdAt);
+                INSERT INTO Checkouts (ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId)
+                VALUES (@clientId, @invoiceType, @operationType, @total, @createdAt, @relatedCheckoutId);
                 SELECT last_insert_rowid();
                 ";
             command.Parameters.AddWithValue("@clientId", _checkout.Client?.ID ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@invoiceType", (int)_checkout.invoiceType);
+            command.Parameters.AddWithValue("@operationType", (int)_checkout.operationType);
             command.Parameters.AddWithValue("@total", _checkout.Total);
             command.Parameters.AddWithValue("@createdAt", _checkout.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+            command.Parameters.AddWithValue("@relatedCheckoutId", _checkout.RelatedCheckoutId ?? (object)DBNull.Value);
             var checkoutId = (long)command.ExecuteScalar()!;
 
             foreach (var item in _checkout.Items)

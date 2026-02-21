@@ -9,3 +9,10 @@ public enum RoleMode
     CashierOnly,
     RepositoryOnly
 }
+public enum OperationMode
+{
+    SaleOnly,
+    CreditNoteOnly,
+    DebitNoteOnly,
+    BudgetOnly
+}

@@ -71,6 +71,14 @@ namespace StockControl.Services
         public void Remove(UserDto userDto)
         {
             User? user = _repository.GetByID(userDto.ID, false);
+            if (user.ID == CurrentUser.ID)
+                throw new Exception("No puedes eliminar tu propio usuario");
+            if (user.Role == RoleType.Admin)
+            {
+                var admins = _repository.GetAll(includeInactive: true).Where(u => u.Role == RoleType.Admin && u.IsActive).ToList();
+                if (admins.Count <= 1)
+                    throw new Exception("Debe haber al menos un usuario administrador activo");
+            }
             if (user == null)
                 throw new Exception("Usuario no encontrado");
             _repository.Remove(user.ID);

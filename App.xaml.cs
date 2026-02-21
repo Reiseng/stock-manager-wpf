@@ -12,14 +12,11 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
         {
+            ConfigService.Load();
             QuestPDF.Settings.License = LicenseType.Community; //QuestPDF License
             base.OnStartup(e);
 
-            var dbPath = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "Databases",
-                "app.db"
-            );
+            var dbPath = ConfigService.Config.DatabasePath;
 
             Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 

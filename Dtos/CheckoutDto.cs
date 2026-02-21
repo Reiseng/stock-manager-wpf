@@ -11,6 +11,17 @@ public class CheckoutDto
     public ClientDto? Client { get; set; }
     public ObservableCollection<CheckoutItemDto> Items { get; set; } = new();
     public DateTime Date { get; set; }
+    private OperationType _operationType;
+    public OperationType OperationType
+        {
+            get => _operationType;
+            set
+            {
+                _operationType = value;
+                OnPropertyChanged();
+            }
+        }
+    public int? RelatedCheckoutId { get; set; }
     private InvoiceType _invoiceType;
     public InvoiceType InvoiceType
         {
@@ -36,7 +47,8 @@ public class CheckoutDto
                 ? ClientDto.FromModel(checkout.Client)
                 : null,
             Date = checkout.Date,
-            _invoiceType = checkout.invoiceType,
+            InvoiceType = checkout.invoiceType,
+            OperationType = checkout.operationType,
             Items = new ObservableCollection<CheckoutItemDto>(
                 checkout.Items.Select(i => new CheckoutItemDto
                 {
@@ -46,7 +58,8 @@ public class CheckoutDto
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice
                 })
-            )
+            ),
+            RelatedCheckoutId = checkout.RelatedCheckoutId
         };
     }
 }

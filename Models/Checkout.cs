@@ -9,14 +9,18 @@ namespace StockControl.Models
             public List<CheckoutItem> Items { get; set; } = new();
             public DateTime Date { get; set; }
             public InvoiceType invoiceType { get; set; }
+            public OperationType operationType { get; set; }
+            public int? RelatedCheckoutId { get; set; }
             public decimal Total {get; set;}
-            public Checkout(Client? client, List<CheckoutItem> items, InvoiceType invoiceType, DateTime date, decimal total)
+            public Checkout(Client? client, List<CheckoutItem> items, InvoiceType invoiceType,OperationType operationType, DateTime date, decimal total, int? relatedCheckoutId = null)
             {
                 Client = client;
                 Items = items;
                 this.invoiceType = invoiceType;
+                this.operationType = operationType;
                 Date = date;
                 Total = total;
+                RelatedCheckoutId = relatedCheckoutId;
             }
             public Checkout() { }
         }

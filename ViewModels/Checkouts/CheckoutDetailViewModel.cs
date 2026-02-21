@@ -87,6 +87,7 @@ namespace StockControl.ViewModels.Checkouts
                 ID.ToString(),
                 Date,
                 _checkoutDto.InvoiceType,
+                _checkoutDto.OperationType,
                 company!,
                 ClientDto!,
                 Items.ToList(),

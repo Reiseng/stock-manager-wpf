@@ -54,5 +54,17 @@ namespace StockControl.Views.Checkouts
                 }
             }
         }
+        private void RelatedCheckoutIdText_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && sender is TextBox tb)
+            {
+                if (DataContext is CheckoutViewModel vm)
+                {
+                    vm.SetRelatedCheckoutIdFromText();
+                    tb.Clear();
+                    tb.Focus();
+                }
+            }
+        }
     }
 }

@@ -77,8 +77,12 @@
                 <DataGridTextColumn Header="Date"
                                     Binding="{Binding Date}"
                                     Width="Auto"/>
-                <DataGridTextColumn Header="Tipo"
+                <DataGridTextColumn Header="Factura"
                                     Binding="{Binding invoiceType,
+                                        Converter={StaticResource EnumDescriptionConverter}}"
+                                    Width="*"/>
+                <DataGridTextColumn Header="Operación"
+                                    Binding="{Binding operationType,
                                         Converter={StaticResource EnumDescriptionConverter}}"
                                     Width="*"/>
                 <DataGridTextColumn Header="Nombre Cliente"
