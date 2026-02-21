@@ -17,8 +17,8 @@ This project simulates a small business management system including inventory co
 🔑 Default Credentials
 
 On first run, the application automatically creates a default administrator account if no active admin exists.
-Username: Admin
-Password: Admin123
+- Username: Admin
+- Password: Admin123
 
 It is recommended to change the password after first login.
 
