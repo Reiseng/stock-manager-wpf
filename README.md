@@ -1,81 +1,90 @@
-# Stock Manager (WPF)
+Stock Manager (WPF)
 
-Desktop application for basic stock and product management, developed in **C# using WPF**.
+Desktop application for stock, sales, and basic business management, developed in C# using WPF (.NET 9).
 
-This project was created as a practical exercise to apply good programming practices, layered architecture, and basic business rules related to inventory control.
+This project simulates a small business management system including inventory control, user roles, and sales operations.
 
----
-
-## 🛠️ Technologies Used
+🛠️ Technologies Used
 
 - C#
-- .NET
-- WPF
+- .NET 9 (WPF)
+- SQLite
+- MVVM Pattern
 - LINQ
-- In-memory persistence
+- Layered Architecture
 - Git
 
----
+📌 Features
 
-## 📌 Features
+- Inventory Management
+- Create, update and deactivate products
+- Stock validation (no negative values)
+- Price management
+- Sales & Operations
+- Sales
+- Credit Notes
+- Debit Notes
+- Budgets
+- Operation type validation
+- Related invoice validation for credit notes
+- Authentication & Security
+- Login system
+- Role-based access (Admin / User)
+- Password hashing
+- Automatic admin bootstrap if no active admin exists
+- Prevent self-deletion of admin
+- Prevent deletion if only one active admin remains
+- Data Persistence
+- SQLite database
+- Automatic database initialization
+- Layered architecture (Repository + Service)
 
-- Create, update and delete products
-- Increase and decrease stock with validation
-- Prevent negative stock values
-- Separation of concerns using Repository and Service layers
-- Input validation and basic error handling
+🧩 Architecture Overview
 
----
+The application follows a layered architecture:
 
-## 🧩 Architecture Overview
+- UI Layer (WPF / MVVM)
+  Responsible for user interaction and data binding.
+- Service Layer
+  Contains business rules and validations (stock checks, role validation, operation logic).
+- Repository Layer
+  Manages data access using SQLite.
+  
+This structure allows future scalability and maintainability.
 
-The application follows a simple layered architecture:
+🚀 How to Run
 
-- **UI Layer**  
-  WPF views responsible for user interaction.
+Option 1 – Run from source
+- Clone the repository
+- Open the solution in Visual Studio
+- Build and run
 
-- **Service Layer**  
-  Contains business logic and validations (e.g. stock availability, input checks).
+Option 2 – Download Release
+- Download the latest release from the GitHub Releases section and run the executable.
 
-- **Repository Layer**  
-  Handles data access and persistence (currently in-memory).
+🔮 Planned Improvements
 
-This structure allows easy future replacement of the persistence layer with a database.
+- Ticket / invoice PDF generation
+- Reporting module
+- Search and filtering improvements
+- UI/UX polishing
+- Automated tests
+- Versioning system
+- Backup & restore functionality
 
----
+📚 Purpose of the Project
 
-## 🚀 How to Run
+- This project demonstrates:
+- Clean architecture principles
+- Business rule implementation
+- Authentication and role-based validation
+- Defensive programming
+- Desktop application development with WPF
+- Real-world inventory and billing logic
 
-1. Clone the repository  
-2. Open the solution in Visual Studio  
-3. Run the project  
+📄 License
 
-No additional configuration is required.
-
----
-
-## 🔮 Possible Improvements
-
-- Replace in-memory storage with a database (SQL Server / SQLite)
-- Add authentication and user roles
-- Improve UI/UX
-- Add unit tests
-
----
-
-## 📚 Purpose of the Project
-
-This project is intended to demonstrate:
-
-- Object-oriented programming
-- Separation of responsibilities
-- Clean and readable code
-- Basic inventory business logic
-
----
-
-## 📄 License
-This project is licensed under the MIT License.
+- MIT License.
 
 ---
 
