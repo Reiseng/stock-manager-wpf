@@ -6,10 +6,10 @@ public class CheckoutItemDto
     public int ProductId { get; set; }
     public string ProductName { get; set; }
     public UnitType Unit { get; set; }
-
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
-    public decimal Total => Quantity * UnitPrice;
+    public decimal Tax { get; set; }
+    public decimal Total => Quantity * UnitPrice * (1 + Tax / 100);
     public static CheckoutItemDto FromModel(CheckoutItem model)
         {
             return new CheckoutItemDto
@@ -17,7 +17,8 @@ public class CheckoutItemDto
                 ProductId = model.product.Id,
                 ProductName = model.product.Name,
                 Quantity = model.Quantity,
-                UnitPrice = model.UnitPrice
+                UnitPrice = model.UnitPrice,
+                Tax = model.product.Tax
             };
         }
 }

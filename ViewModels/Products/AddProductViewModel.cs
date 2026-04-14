@@ -49,6 +49,7 @@ namespace StockControl.ViewModels.Products
             Price = product.Price.Value;
             Stock = product.Stock.Value;
             SelectedUnitType = product.Unit.Value;
+            Tax = product.Tax.Value;
         }
         private string _barcode;
         public string Barcode
@@ -100,6 +101,12 @@ namespace StockControl.ViewModels.Products
             get => _selectedUnitType;
             set { _selectedUnitType = value; OnPropertyChanged(); }
         }
+        private decimal _tax;
+        public decimal Tax
+        {
+            get => _tax;
+            set { _tax = value; OnPropertyChanged(); }
+        }
 
         public Array UnitTypes { get; }
 
@@ -115,6 +122,7 @@ private void Save()
         _Product.Price = Price;
         _Product.Stock = Stock;
         _Product.Unit = SelectedUnitType;
+        _Product.Tax = Tax;
         if (IsEditMode)
         {
             _productService.UpdateProduct(_Product);

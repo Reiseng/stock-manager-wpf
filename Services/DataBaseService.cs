@@ -55,6 +55,7 @@ namespace StockControl.Services.Database
                     Price REAL NOT NULL,
                     Stock REAL NOT NULL,
                     Unit INTEGER NOT NULL,
+                    Tax REAL NOT NULL DEFAULT 21.0,
                     IsActive INTEGER NOT NULL DEFAULT 1
                 );
 
@@ -86,11 +87,10 @@ namespace StockControl.Services.Database
                     Address TEXT NOT NULL,
                     Phone TEXT,
                     Email TEXT,
-                    TaxCondition INTEGER NOT NULL,
-                    Tax REAL NOT NULL DEFAULT 21.0
+                    TaxCondition INTEGER NOT NULL
                 );
-                INSERT INTO CompanyInfo (CUIT, Name, Address, Phone, Email, TaxCondition, Tax)
-                SELECT '00000000', 'Empresa', 'Dirección de la empresa', NULL, NULL, 1, 21.0
+                INSERT INTO CompanyInfo (CUIT, Name, Address, Phone, Email, TaxCondition)
+                SELECT '00000000', 'Empresa', 'Dirección de la empresa', NULL, NULL, 1
                 WHERE NOT EXISTS (
                     SELECT 1 FROM CompanyInfo WHERE CUIT = '00000000'
                 );

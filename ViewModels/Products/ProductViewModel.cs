@@ -105,7 +105,7 @@ namespace StockControl.ViewModels.Products
 
         private void EditProduct(Product product)
         {
-            ProductDto _product = new ProductDto(product.Id, product.Barcode, product.Brand, product.Name, product.Stock, product.Price, product.Unit);
+            ProductDto _product = new ProductDto(product.Id, product.Barcode, product.Brand, product.Name, product.Stock, product.Price, product.Unit, product.Tax);
             var vm = new AddProductViewModel(_productService, _product);
             var view = new AddProductWindow
             {

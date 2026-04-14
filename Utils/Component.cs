@@ -1,6 +1,7 @@
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using StockControl.Dtos;
+using StockControl.Utils;
 
 public class CompanyComponent : IComponent
 {
@@ -23,8 +24,7 @@ public class CompanyComponent : IComponent
 
             column.Item().Text(company.Name);
             column.Item().Text(company.CUIT);
-            column.Item().Text(company.taxCondition.ToString());
-            column.Item().Text("IVA: " + company.tax+"%");
+            column.Item().Text(company.taxCondition.GetDescription());
             column.Item().Text(company.Address);
             column.Item().Text(company.Email);
             column.Item().Text(company.Phone);

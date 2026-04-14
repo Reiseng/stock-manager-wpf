@@ -106,6 +106,9 @@
                 <DataGridTextColumn Header="Nombre"
                                     Binding="{Binding Name}"
                                     Width="2*"/>
+                <DataGridTextColumn Header="Impuesto (%)"
+                                    Binding="{Binding Tax}"
+                                    Width="2*"/>
                 <DataGridTextColumn Header="Stock"
                                     Binding="{Binding Stock}"
                                     Width="Auto"/>

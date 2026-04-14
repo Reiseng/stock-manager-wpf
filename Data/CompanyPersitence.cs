@@ -19,7 +19,7 @@ public class CompanyPersistence
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT Id, CUIT, Name, Address, Phone, Email, TaxCondition, Tax
+                SELECT Id, CUIT, Name, Address, Phone, Email, TaxCondition
                 FROM CompanyInfo
                 LIMIT 1;
                 ";
@@ -32,8 +32,7 @@ public class CompanyPersistence
                     reader.IsDBNull(3) ? null : reader.GetString(3),
                     reader.IsDBNull(4) ? null : reader.GetString(4),
                     reader.IsDBNull(5) ? null : reader.GetString(5),
-                    (TaxCondition)reader.GetInt32(6),
-                    reader.GetDecimal(7)
+                    (TaxCondition)reader.GetInt32(6)
                 );
                 company.Id = reader.GetInt32(0);
                 return company;
@@ -46,8 +45,8 @@ public class CompanyPersistence
             connection.Open();
             using var command = connection.CreateCommand();
                 command.CommandText = @"
-                    INSERT INTO CompanyInfo (CUIT, Name, Address, Phone, Email, TaxCondition, Tax)
-                    VALUES (@cuit, @name, @address, @phone, @email, @taxCondition, @tax);
+                    INSERT INTO CompanyInfo (CUIT, Name, Address, Phone, Email, TaxCondition)
+                    VALUES (@cuit, @name, @address, @phone, @email, @taxCondition);
                     ";
             command.Parameters.AddWithValue("@cuit", company.CUIT);
             command.Parameters.AddWithValue("@name", company.Name);
@@ -55,7 +54,6 @@ public class CompanyPersistence
             command.Parameters.AddWithValue("@phone", (object?)company.Phone ?? DBNull.Value);
             command.Parameters.AddWithValue("@email", (object?)company.Email ?? DBNull.Value);
             command.Parameters.AddWithValue("@taxCondition", (int)company.taxCondition);
-            command.Parameters.AddWithValue("@tax", company.tax);
             command.ExecuteNonQuery();
         }
         public void UpdateCompany(Company company)
@@ -70,8 +68,7 @@ public class CompanyPersistence
                         Address = @address,
                         Phone = @phone,
                         Email = @email,
-                        TaxCondition = @taxCondition,
-                        Tax = @tax
+                        TaxCondition = @taxCondition
                     WHERE Id = @id;
                     ";
             command.Parameters.AddWithValue("@cuit", company.CUIT);
@@ -80,7 +77,6 @@ public class CompanyPersistence
             command.Parameters.AddWithValue("@phone", (object?)company.Phone ?? DBNull.Value);
             command.Parameters.AddWithValue("@email", (object?)company.Email ?? DBNull.Value);
             command.Parameters.AddWithValue("@taxCondition", (int)company.taxCondition);
-            command.Parameters.AddWithValue("@tax", company.tax);
             command.Parameters.AddWithValue("@id", company.Id);
             command.ExecuteNonQuery();
         }

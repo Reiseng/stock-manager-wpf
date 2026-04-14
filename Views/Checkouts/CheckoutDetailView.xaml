@@ -52,6 +52,7 @@
                                         Converter={StaticResource EnumDescriptionConverter}}"
                                     Width="80"/>
                 <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice}" Width="100"/>
+                    <DataGridTextColumn Header="IVA" Binding="{Binding Tax}" Width="80"/>
                 <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="100"/>
             </DataGrid.Columns>
         </DataGrid>

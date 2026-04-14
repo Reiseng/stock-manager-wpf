@@ -66,6 +66,7 @@ namespace StockControl.Services
                 existing.Price = _product.Price.Value;
                 existing.Stock = _product.Stock.Value;
                 existing.Unit = (UnitType)_product.Unit!.Value;
+                existing.Tax = _product.Tax.Value;
                 existing.IsActive = true;
 
                 _repository.Update(existing);
@@ -79,6 +80,7 @@ namespace StockControl.Services
                     _product.Price.Value,
                     _product.Stock.Value,
                     (UnitType)_product.Unit!.Value,
+                    _product.Tax.Value,
                     true
                 );
 
@@ -114,6 +116,10 @@ namespace StockControl.Services
             if (_product.Unit.HasValue)
             {
                 product.Unit = _product.Unit.Value;
+            }
+            if (_product.Tax.HasValue)
+            {
+                product.Tax = _product.Tax.Value;
             }
             _repository.Update(product);
         }

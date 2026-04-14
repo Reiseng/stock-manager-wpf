@@ -147,7 +147,7 @@ namespace StockControl.Services
                     }
                 }
             }
-            _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total)*(1+(companyService.GetCompanyInfo().tax/100));
+            _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total*(1+(i.product.Tax/100)));
             var lastCheckout = _repository.Add(_currentCheckout);
             return lastCheckout;
         }

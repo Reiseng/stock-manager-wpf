@@ -3,6 +3,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using QuestPDF.Fluent;
 using StockControl.Enums;
+using StockControl.Utils;
 
 namespace StockControl.Services
 {
@@ -35,7 +36,7 @@ namespace StockControl.Services
                 row.RelativeItem().Column(column =>
                 {
                     column.Item().Text($"Factura N°: {Invoice.invoiceNumber}").FontSize(16).Bold();
-                    column.Item().Text($"Tipo de factura: {Invoice.invoiceType}");
+                    column.Item().Text($"Tipo de factura: {Invoice.invoiceType.GetDescription()}").FontSize(12);
                     column.Item().Text($"Fecha: {Invoice.date:dd/MM/yyyy}").FontSize(12);
                 });
                 row.ConstantItem(100).Height(50).Placeholder();
@@ -56,8 +57,6 @@ namespace StockControl.Services
 
                     column.Item().Element(ComposeTable);
 
-                    var totalPrice = Invoice.items.Sum(x => x.UnitPrice * x.Quantity)*(1+(Invoice.tax/100));
-                    column.Item().AlignRight().Text($"Total + IVA: {totalPrice}$").FontSize(14);
                 });
         }
         public void ComposeFooter(IContainer container)
@@ -66,7 +65,7 @@ namespace StockControl.Services
             {
                 row.RelativeItem().Column(column =>
                 {
-                    column.Item().Text($"Total: ${Invoice.total:F2}").FontSize(14).Bold();
+                    column.Item().Text($"Total: ${Invoice.total:F2}").AlignRight().FontSize(14).Bold();
                 });
             });
         }
@@ -77,7 +76,8 @@ namespace StockControl.Services
                 table.ColumnsDefinition(columns =>
                 {
                     columns.ConstantColumn(25);
-                    columns.RelativeColumn(3);
+                    columns.RelativeColumn();
+                    columns.RelativeColumn();
                     columns.RelativeColumn();
                     columns.RelativeColumn();
                     columns.RelativeColumn();
@@ -88,6 +88,7 @@ namespace StockControl.Services
                     header.Cell().Element(CellStyle).Text("#");
                     header.Cell().Element(CellStyle).Text("Producto");
                     header.Cell().Element(CellStyle).AlignRight().Text("Precio Unit.");
+                    header.Cell().Element(CellStyle).AlignRight().Text("Impuesto (%)");
                     header.Cell().Element(CellStyle).AlignRight().Text("Cant.");
                     header.Cell().Element(CellStyle).AlignRight().Text("Total");
                     
@@ -102,8 +103,9 @@ namespace StockControl.Services
                     table.Cell().Element(CellStyle).Text((Invoice.items.IndexOf(item) + 1).ToString());
                     table.Cell().Element(CellStyle).Text(item.ProductName);
                     table.Cell().Element(CellStyle).AlignRight().Text($"{item.UnitPrice}$");
+                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.Tax}%");
                     table.Cell().Element(CellStyle).AlignRight().Text(item.Quantity.ToString());
-                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.UnitPrice * item.Quantity}$");
+                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.UnitPrice * (1 + item.Tax / 100) * item.Quantity}$");
                     
                     static IContainer CellStyle(IContainer container)
                     {

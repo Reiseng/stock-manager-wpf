@@ -12,10 +12,8 @@ namespace StockControl.Dtos
         public Company seller { get; set; }
         public ClientDto client { get; set; }
         public List<CheckoutItemDto> items { get; set; }
-        public decimal subtotal { get; set; }
-        public decimal tax { get; set; }
         public decimal total { get; set; }
-        public InvoiceDto(string InvoiceNumber, DateTime Date,InvoiceType InvoiceType, OperationType OperationType, Company Seller, ClientDto Client, List<CheckoutItemDto> Items, decimal Subtotal, decimal Tax, decimal Total)
+        public InvoiceDto(string InvoiceNumber, DateTime Date,InvoiceType InvoiceType, OperationType OperationType, Company Seller, ClientDto Client, List<CheckoutItemDto> Items, decimal Total)
         {
             invoiceNumber = InvoiceNumber;
             date = Date;
@@ -24,8 +22,6 @@ namespace StockControl.Dtos
             seller = Seller;
             client = Client;
             items = Items;
-            subtotal = Subtotal;
-            tax = Tax;
             total = Total;
         }
     }

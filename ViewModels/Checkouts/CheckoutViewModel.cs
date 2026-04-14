@@ -61,7 +61,6 @@ namespace StockControl.ViewModels.Checkouts
                 _checkout = value;
                 OnPropertyChanged(nameof(Checkout));
                 OnPropertyChanged(nameof(Total));
-                OnPropertyChanged(nameof(SubTotal));
                 OnPropertyChanged(nameof(ClientFullName));
                 OnPropertyChanged(nameof(ClientDocument));
                 OnPropertyChanged(nameof(Checkout.Items));
@@ -109,8 +108,7 @@ namespace StockControl.ViewModels.Checkouts
         public RelayCommand RemoveItemCommand { get; }
         public RelayCommand LoggoutCommand { get; }
 
-        public decimal SubTotal => Checkout?.SubTotal ?? 0;
-        public decimal Total => Checkout?.SubTotal * (1+ (_company?.tax/100 ?? 0)) ?? 0;
+        public decimal Total => Checkout?.Total ?? 0;
 
         public CheckoutViewModel()
         {
@@ -176,7 +174,6 @@ namespace StockControl.ViewModels.Checkouts
                         _checkoutService.RemoveProduct(modelItem);
                     }
                     OnPropertyChanged(nameof(Total));
-                    OnPropertyChanged(nameof(SubTotal));
                 }
             }
             catch(Exception ex)
@@ -207,7 +204,6 @@ namespace StockControl.ViewModels.Checkouts
                 Checkout.Items.Add(CheckoutItemDto.FromModel(item));
 
             OnPropertyChanged(nameof(Total));
-            OnPropertyChanged(nameof(SubTotal));
             ConfirmCheckoutCommand.RaiseCanExecuteChanged();
         }
         private void ConfirmCheckout()
@@ -386,8 +382,6 @@ namespace StockControl.ViewModels.Checkouts
                 _company!,
                 Checkout.Client!,
                 Checkout.Items.ToList(),
-                SubTotal,
-                _company?.tax ?? 0,
                 Total
             );
             var vm = new PrintActionViewModel(invoice);

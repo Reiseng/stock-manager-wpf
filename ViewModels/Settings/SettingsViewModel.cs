@@ -34,7 +34,6 @@ namespace StockControl.ViewModels.Settings
             Name = _company?.Name ?? "";
             CUIT = _company?.CUIT ?? "";
             SelectedTaxCondition = _company?.taxCondition ?? TaxCondition.FinalConsumer;
-            Tax = _company?.tax ?? 0;
             Phone = _company?.Phone ?? "";
             Email = _company?.Email ?? "";
             Address = _company?.Address ?? "";
@@ -66,13 +65,6 @@ namespace StockControl.ViewModels.Settings
             set { _selectedTaxCondition = value; OnPropertyChanged(); }
         }
 
-        private decimal _tax;
-        public decimal Tax
-        {
-            get => _tax;
-            set { _tax = value; OnPropertyChanged();}
-        }
-
         private string _phone;
         public string Phone
         {
@@ -102,7 +94,6 @@ private void Save()
             _company.CUIT = CUIT;
             _company.Name = Name;
             _company.taxCondition = SelectedTaxCondition;
-            _company.tax = Tax;
             _company.Phone = Phone;
             _company.Email = Email;
             _company.Address = Address;
@@ -130,8 +121,7 @@ private void Save()
         private bool CanSave()
         {
             return !string.IsNullOrWhiteSpace(Name)
-                   && !string.IsNullOrWhiteSpace(CUIT)
-                   && Tax >= 0;
+                   && !string.IsNullOrWhiteSpace(CUIT);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

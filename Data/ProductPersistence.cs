@@ -20,7 +20,7 @@ public class ProductPersistence
 
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, IsActive
+                SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, Tax, IsActive
                 FROM Products
                 ";
             if (!includeInactive)
@@ -38,7 +38,8 @@ public class ProductPersistence
                     reader.GetDecimal(4),
                     reader.GetDecimal(5),
                     (UnitType)reader.GetInt32(6),
-                    reader.GetBoolean(7)
+                    reader.GetDecimal(7),
+                    reader.GetBoolean(8)
                 );
                 product.Id = reader.GetInt32(0);
                 products.Add(product);
@@ -51,7 +52,7 @@ public class ProductPersistence
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, IsActive
+                SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, Tax, IsActive
                 FROM Products
                 WHERE Id = @id
                 ";
@@ -71,7 +72,8 @@ public class ProductPersistence
                     reader.GetDecimal(4),
                     reader.GetDecimal(5),
                     (UnitType)reader.GetInt32(6),
-                    reader.GetBoolean(7)
+                    reader.GetDecimal(7),
+                    reader.GetBoolean(8)
                 );
                 product.Id = reader.GetInt32(0);
                 return product;
@@ -84,7 +86,7 @@ public class ProductPersistence
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, IsActive
+                SELECT Id, Barcode, Brand, Name, Price, Stock, Unit, Tax, IsActive
                 FROM Products
                 WHERE Barcode = @barcode
                 ";
@@ -104,7 +106,8 @@ public class ProductPersistence
                     reader.GetDecimal(4),
                     reader.GetDecimal(5),
                     (UnitType)reader.GetInt32(6),
-                    reader.GetBoolean(7)
+                    reader.GetDecimal(7),
+                    reader.GetBoolean(8)
                 );
                 product.Id = reader.GetInt32(0);
                 return product;
@@ -118,8 +121,8 @@ public class ProductPersistence
 
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO Products (Name, Barcode, Brand, Price, Stock, Unit, IsActive)
-                VALUES (@name, @barcode, @brand, @price, @stock, @unitType, @isActive);
+                INSERT INTO Products (Name, Barcode, Brand, Price, Stock, Unit, Tax, IsActive)
+                VALUES (@name, @barcode, @brand, @price, @stock, @unitType, @tax, @isActive);
                 ";
             command.Parameters.AddWithValue("@name", product.Name);
             command.Parameters.AddWithValue("@barcode", product.Barcode);
@@ -127,6 +130,7 @@ public class ProductPersistence
             command.Parameters.AddWithValue("@price", product.Price);
             command.Parameters.AddWithValue("@stock", product.Stock);
             command.Parameters.AddWithValue("@unitType", (int)product.Unit);
+            command.Parameters.AddWithValue("@tax", product.Tax);
             command.Parameters.AddWithValue("@isActive", product.IsActive ? 1 : 0);
             command.ExecuteNonQuery();
     }
@@ -159,6 +163,7 @@ public class ProductPersistence
                     Price = @price,
                     Stock = @stock,
                     Unit = @unitType,
+                    Tax = @tax,
                     IsActive = @isActive
                 WHERE Id = @id;
                 ";
@@ -168,6 +173,7 @@ public class ProductPersistence
             command.Parameters.AddWithValue("@price", product.Price);
             command.Parameters.AddWithValue("@stock", product.Stock);
             command.Parameters.AddWithValue("@unitType", (int)product.Unit);
+            command.Parameters.AddWithValue("@tax", product.Tax);
             command.Parameters.AddWithValue("@isActive", product.IsActive ? 1 : 0);
             command.Parameters.AddWithValue("@id", product.Id);
             command.ExecuteNonQuery();

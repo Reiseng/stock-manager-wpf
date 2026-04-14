@@ -37,7 +37,6 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <Grid.ColumnDefinitions>
@@ -66,25 +65,20 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
- 
-                <!-- Tax -->
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Impuesto*" Margin="0,10,0,0"/>
-                <TextBox Grid.Row="3" Grid.Column="1"
-                         Text="{Binding Tax}" Margin="0,10,0,0"/>
 
                 <!-- Phone -->
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Telefono" Margin="0,10,0,0"/>
-                <TextBox Grid.Row="4" Grid.Column="1"
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Telefono" Margin="0,10,0,0"/>
+                <TextBox Grid.Row="3" Grid.Column="1"
                          Text="{Binding Phone}" Margin="0,10,0,0"/>
 
                 <!-- Email -->
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="Email" Margin="0,10,0,0"/>
-                <TextBox Grid.Row="5" Grid.Column="1"
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Email" Margin="0,10,0,0"/>
+                <TextBox Grid.Row="4" Grid.Column="1"
                          Text="{Binding Email}" Margin="0,10,0,0"/>
 
                 <!-- Address -->
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="Dirección" Margin="0,10,0,0"/>
-                <TextBox Grid.Row="6" Grid.Column="1"
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Dirección" Margin="0,10,0,0"/>
+                <TextBox Grid.Row="5" Grid.Column="1"
                          Text="{Binding Address}" Margin="0,10,0,0"/>
 
                 <!-- Buttons -->

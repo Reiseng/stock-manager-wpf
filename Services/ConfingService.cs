@@ -34,5 +34,5 @@ public static class ConfigService
 }
 public class AppConfig
 {
-    public string DatabasePath { get; set; }
+    public string? DatabasePath { get; set; }
 }

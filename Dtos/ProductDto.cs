@@ -11,7 +11,8 @@ namespace StockControl.Dtos
         public decimal? Stock { get; set; }
         public decimal? Price { get; set; }
         public UnitType? Unit { get; set; }
-        public ProductDto(int id, string? barcode, string? brand, string? name, decimal? stock, decimal? price, UnitType? unitType)
+        public decimal? Tax { get; set; }
+        public ProductDto(int id, string? barcode, string? brand, string? name, decimal? stock, decimal? price, UnitType? unitType, decimal? tax)
         {
             Id = id;
             Barcode = barcode;
@@ -20,6 +21,7 @@ namespace StockControl.Dtos
             Stock = stock;
             Price = price;
             Unit = unitType;
+            Tax = tax;
         }
         public ProductDto(){}
 
@@ -33,7 +35,8 @@ namespace StockControl.Dtos
                 Brand = product.Barcode,
                 Stock = product.Stock,
                 Price = product.Price,
-                Unit = product.Unit
+                Unit = product.Unit,
+                Tax = product.Tax
             };
         }
     }

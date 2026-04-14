@@ -24,8 +24,6 @@ namespace StockControl.Services
                 throw new Exception("CUIT inválido");
             if (string.IsNullOrWhiteSpace(company.Name))
                 throw new Exception("Nombre inválido");
-            if (company.tax < 0)
-                throw new Exception("Impuesto inválido");
 
             Company? existingCompany = _repository.GetCompany();
             if (existingCompany == null)
@@ -36,8 +34,7 @@ namespace StockControl.Services
                     company.Address,
                     company.Phone,
                     company.Email,
-                    company.taxCondition,
-                    company.tax
+                    company.taxCondition
                 );
                 _repository.AddCompany(newCompany);
             }
@@ -49,7 +46,6 @@ namespace StockControl.Services
                 existingCompany.Phone = company.Phone;
                 existingCompany.Email = company.Email;
                 existingCompany.taxCondition = company.taxCondition;
-                existingCompany.tax = company.tax;
 
                 _repository.UpdateCompany(existingCompany);
             }
