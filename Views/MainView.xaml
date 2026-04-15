@@ -2,61 +2,123 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
              
-    <Grid Margin="20">
+    <Grid Margin="20" Background="#F5F5F5">
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Orientation="Horizontal" Grid.Row="0"
-                    HorizontalAlignment="Stretch"
-                    Margin="0,0,0,20">
-
-            <TextBlock Text="StockControl"
-                    FontSize="24"
-                    FontWeight="Bold"/>
-
-            <TextBlock Text="{Binding Title}"
-                    Margin="20,0,0,0"/>
-
-        </StackPanel>
-
         <!-- Welcome -->
-        <TextBlock Grid.Row="1"
-                Text="Bienvenido al panel de control de StockControl"
-                FontSize="20"
-                FontWeight="SemiBold"
-                Margin="0,0,0,20"/>
+        <Border Grid.Row="0"
+                Background="#2D2D30"
+                Height="60">
+        <TextBlock Grid.Row="0"
+                   Text="Panel de control"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   Margin="20,0,0,0"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+        </Border>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Dashboard -->
-        <UniformGrid Grid.Row="2" Columns="2" Rows="2">
+            <!--  DATOS DE EMPRESA -->
+            <Border Grid.Column="0"
+                    Margin="10"
+                    Padding="20"
+                    Background="White"
+                    CornerRadius="10">
 
-            <Border Margin="10" Padding="15" Background="#EEE">
-                <TextBlock Text="Proximamente"/>
+                <StackPanel>
+                    <TextBlock Text="Datos de la Empresa"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Margin="0,0,0,15"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                    
+                    <TextBlock Text= "Nombre"
+                               FontWeight="Bold"
+                               Margin="0,10,0,0"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Empresa.Name, UpdateSourceTrigger=PropertyChanged}" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock Text="Teléfono"
+                               FontWeight="Bold"
+                               Margin="0,10,0,0"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Empresa.Phone, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock Text="Email"
+                               FontWeight="Bold"
+                               Margin="0,10,0,0"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Empresa.Email, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock Text="Dirección"
+                               FontWeight="Bold"
+                               Margin="0,10,0,0"
+                               HorizontalAlignment="Center"/>
+
+                    <TextBlock Text="{Binding Empresa.Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock Text="CUIT"
+                               FontWeight="Bold"
+                               Margin="0,10,0,0"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Empresa.CUIT, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                </StackPanel>
             </Border>
 
-            <Border Margin="10" Padding="15" Background="#EEE">
-                <TextBlock Text="Proximamente"
-                           Visibility="{Binding ViewMode,
-                                            Converter={StaticResource ModeToVisibilityConverter},
-                                            ConverterParameter=AdminOnly}"/>
-            </Border>
+            <!--  RESUMEN -->
+            <StackPanel Grid.Column="1">
 
-            <Border Margin="10" Padding="15" Background="#EEE">
-                <TextBlock Text="Proximamente"/>
-            </Border>
+                <!-- Total productos -->
+                <Border Margin="10"
+                        Padding="15"
+                        Background="White"
+                        CornerRadius="10">
+                    <StackPanel>
+                        <TextBlock Text="Productos"
+                                   FontWeight="Bold"/>
+                        <TextBlock Text="{Binding TotalProductos, UpdateSourceTrigger=PropertyChanged}"
+                                   FontSize="20"/>
+                    </StackPanel>
+                </Border>
 
-            <Border Margin="10" Padding="15" Background="#EEE">
-                <TextBlock Text="Proximamente"
-                           Visibility="{Binding ViewMode,
-                                            Converter={StaticResource ModeToVisibilityConverter},
-                                            ConverterParameter=AdminOnly}"/>
-            </Border>
+                <!-- Stock bajo -->
+                <Border Margin="10"
+                        Padding="15"
+                        Background="White"
+                        CornerRadius="10">
+                    <StackPanel>
+                        <TextBlock Text="Stock bajo"
+                                   FontWeight="Bold"/>
+                        <TextBlock Text="{Binding ProductosStockBajo, UpdateSourceTrigger=PropertyChanged}"
+                                   FontSize="20"/>
+                    </StackPanel>
+                </Border>
 
-        </UniformGrid>
+                <!-- Solo Admin -->
+                <Border Margin="10"
+                        Padding="15"
+                        Background="White"
+                        CornerRadius="10"
+                        Visibility="{Binding ViewMode,
+                            Converter={StaticResource ModeToVisibilityConverter},
+                            ConverterParameter=AdminOnly}">
+                    <StackPanel>
+                        <TextBlock Text="Última actualización"
+                                   FontWeight="Bold"/>
+                        <TextBlock Text="{Binding UltimaActualizacion, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </Grid>
 
     </Grid>
 </UserControl>

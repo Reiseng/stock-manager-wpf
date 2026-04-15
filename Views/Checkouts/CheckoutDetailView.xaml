@@ -70,9 +70,6 @@
                        VerticalAlignment="Center"/>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="Ticket"
-                        IsEnabled="False"
-                        Margin="5"/>
                 <Button Content="PDF"
                         Command="{Binding PrintPDFCommand}"
                         Margin="5"/>

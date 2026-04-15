@@ -9,14 +9,15 @@
         <!-- Success Text -->
     <Border Padding="20" CornerRadius="6">
          <StackPanel Orientation="Horizontal">
+                   <TextBlock Text="¿Desea imprimir la factura?"
+                            FontSize="16"
+                            Margin="0,0,20,0"
+                            VerticalAlignment="Center"/>
                 <Button Content="Confirmar"
                         Command="{Binding ConfirmCheckoutCommand}"
                         Margin="5"/>
                 <Button Content="PDF"
                         Command="{Binding GenerateInvoicePDFCommand}"
-                        Margin="5"/>
-                <Button Content="Ticket"
-                        Command="{Binding ConfirmCheckoutCommand}"
                         Margin="5"/>
             </StackPanel>
     </Border>

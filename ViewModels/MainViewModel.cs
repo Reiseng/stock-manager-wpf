@@ -14,6 +14,7 @@ using StockControl.Views;
 using StockControl.ViewModels.Users;
 using StockControl.Models;
 using StockControl.Enums;
+using System.Linq;
 
 namespace StockControl.ViewModels
 {
@@ -22,26 +23,47 @@ namespace StockControl.ViewModels
         public RoleMode ViewMode { get; }
         public User CurrentUser{ get; }
         private IReadOnlyList<Product> allproducts;
-        private IReadOnlyList<Checkout> todaycheckouts;
-        public string Title { get; private set; }
-        private string _totalstock { get; set; }
-        public string TotalStock
+        private Company _empresa;
+        public Company Empresa
         {
-            get=> _totalstock;
+            get => _empresa;
             set
             {
-                _totalstock = value;
-                OnPropertyChanged(nameof(_totalstock));
+                _empresa = value;
+                OnPropertyChanged(nameof(Empresa));
             }
         }
-        private string _todaysell { get; set; }
-        public string TodaySell
+        public string Title { get; private set; }
+        private int _totalProductos;
+        public int TotalProductos
         {
-            get=> _todaysell;
+            get => _totalProductos;
             set
             {
-                _todaysell = value;
-                OnPropertyChanged(nameof(_todaysell));
+                _totalProductos = value;
+                OnPropertyChanged(nameof(TotalProductos));
+            }
+        }
+
+        private int _productosStockBajo;
+        public int ProductosStockBajo
+        {
+            get => _productosStockBajo;
+            set
+            {
+                _productosStockBajo = value;
+                OnPropertyChanged(nameof(ProductosStockBajo));
+            }
+        }
+
+        private string _ultimaActualizacion;
+        public string UltimaActualizacion
+        {
+            get => _ultimaActualizacion;
+            set
+            {
+                _ultimaActualizacion = value;
+                OnPropertyChanged(nameof(UltimaActualizacion));
             }
         }
         private object _currentView;
@@ -154,6 +176,7 @@ namespace StockControl.ViewModels
             });
             ShowMainViewCommand = new RelayCommand(_ =>
             {
+                UpdateDashboard();
                 CurrentView = new MainView
                 {
                     DataContext = this
@@ -162,25 +185,20 @@ namespace StockControl.ViewModels
         }
         public void UpdateDashboard()
         {
-            int count = 0;
             allproducts = AppServices.ProductService.GetProducts(false);
-            decimal actualstock = 0.0m;
-            foreach (var product in allproducts)
-            {
-                actualstock += product.Stock;
-            }
-            _totalstock = $"Total productos: {actualstock}";
-            todaycheckouts = AppServices.CheckoutService.GetCheckouts();
-            foreach (var checkout in todaycheckouts)
-            {
-                if ((checkout.Date.Day == DateTime.Today.Day) &&
-                (checkout.Date.Month == DateTime.Today.Month) &&
-                (checkout.Date.Year == DateTime.Today.Year))
-                {
-                    count++;
-                }
-            }
-            _todaysell = $"Ventas de hoy: {count}";
+
+            // Total productos
+            TotalProductos = allproducts.Count;
+
+            // Stock bajo (ejemplo: stock < 10, ajustalo a tu lógica)
+            ProductosStockBajo = allproducts.Count(p => p.Stock < 10);
+
+            // Última actualización
+            UltimaActualizacion = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+
+            // Empresa
+            Empresa = AppServices.CompanyService.GetCompanyInfo();
+
         }
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name)

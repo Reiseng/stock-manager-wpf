@@ -15,10 +15,6 @@
                     Content="Cerrar sesión"
                     Command="{Binding LoggoutCommand}"
                     Margin="10"/>
-            <Button DockPanel.Dock="Bottom"
-                    Content="Ayuda"
-                    Command="{Binding HelpCommand}"
-                    Margin="10"/>
             <StackPanel>
             <Button Content="Inicio" Command="{Binding ShowMainViewCommand}" Margin="10" Height="40"/>
             <Button Content="Productos" Command="{Binding ShowProductsCommand}" Margin="10" Height="40"/>

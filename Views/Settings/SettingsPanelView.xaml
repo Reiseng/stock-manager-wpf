@@ -10,7 +10,7 @@
 
         <!-- Header -->
         <Border Grid.Row="0"
-                Background="#2D6CDF"
+                Background="#2D2D30"
                 Height="60">
             <TextBlock Text="Panel de configuración"
                        Foreground="White"
