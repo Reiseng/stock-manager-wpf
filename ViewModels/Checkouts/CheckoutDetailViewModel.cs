@@ -8,7 +8,7 @@ using StockControl.Utils;
 
 namespace StockControl.ViewModels.Checkouts
 {
-    public class CheckoutDetailViewModel : INotifyPropertyChange
+    public class CheckoutDetailViewModel : INotifyPropertyChanged
     {
         private readonly CheckoutService _checkoutService;
         private readonly CheckoutDto _checkoutDto;
@@ -92,8 +92,5 @@ namespace StockControl.ViewModels.Checkouts
             );
             CloseAction?.Invoke(false);
         }
-    }
-    public interface INotifyPropertyChange
-    {
     }
 }

@@ -1,49 +1,71 @@
-﻿<Window x:Class="StockControl.Views.MainWindow"
+<Window x:Class="StockControl.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:StockControl.ViewModels"
-        Title="Dashboard" Height="Auto" Width="Auto">
+        xmlns:services="clr-namespace:StockControl.Services"
+        Style="{StaticResource AppWindow}"
+        Title="Stock Manager"
+        Width="1280" Height="800" MinWidth="1000" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
 
-    <Window.DataContext>
-        <vm:MainWindowViewModel/>
-    </Window.DataContext>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="236"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-    <DockPanel>
-        <!-- Lateral menu -->
-        <DockPanel DockPanel.Dock="Right" Width="200" Background="#2D2D30">
-            <Button DockPanel.Dock="Bottom"
-                    Content="Cerrar sesión"
-                    Command="{Binding LoggoutCommand}"
-                    Margin="10"/>
+        <!-- Sidebar -->
+        <DockPanel Background="{DynamicResource Brush.Sidebar}">
+            <!-- Brand -->
+            <StackPanel DockPanel.Dock="Top" Margin="26,28,20,26">
+                <TextBlock Text="Stock Manager"
+                           FontFamily="{StaticResource Font.Display}" FontWeight="SemiBold" FontSize="22"
+                           Foreground="White"/>
+                <TextBlock Text="{Binding Empresa.Name}" Foreground="{DynamicResource Brush.SidebarText}"
+                           FontSize="13" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                <Border Height="3" Width="32" Background="{DynamicResource Brush.Accent}"
+                        HorizontalAlignment="Left" Margin="0,14,0,0" CornerRadius="1.5"/>
+            </StackPanel>
+
+            <!-- Current user + logout -->
+            <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,18">
+                <Border Height="1" Background="{DynamicResource Brush.SidebarHover}" Margin="24,0,24,14"/>
+                <StackPanel Margin="26,0,20,10">
+                    <TextBlock Text="{Binding CurrentUser.Username}" Foreground="White" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Foreground="{DynamicResource Brush.SidebarText}" FontSize="12" Margin="0,2,0,0">
+                        <Run Text="{Binding CurrentUser.Role, Mode=OneWay, Converter={StaticResource EnumDescriptionConverter}}"/>
+                        <Run Text="  "/>
+                        <Run Text="{x:Static services:UpdateService.CurrentVersionText}"/>
+                    </TextBlock>
+                </StackPanel>
+                <Button Style="{StaticResource NavAction}" Tag="&#xE7E8;" Content="Cerrar sesión"
+                        Command="{Binding LoggoutCommand}"/>
+            </StackPanel>
+
+            <!-- Navigation -->
             <StackPanel>
-            <Button Content="Inicio" Command="{Binding ShowMainViewCommand}" Margin="10" Height="40"/>
-            <Button Content="Productos" Command="{Binding ShowProductsCommand}" Margin="10" Height="40"/>
-            <Button Content="Clientes" Command="{Binding ShowClientsCommand}" Margin="10" Height="40"/>
-            <Button Content="Vender" Margin="10" Height="40" Command="{Binding OpenCheckoutCommand}"/>
-            <Button Content="Historial de ventas" 
-                Margin="10" 
-                Height="40" 
-                Command="{Binding ShowCheckoutHistoryCommand}"
-                Visibility="{Binding ViewMode,
-                                            Converter={StaticResource ModeToVisibilityConverter},
-                                            ConverterParameter=AdminOnly}"/>
-            <Button Content="Usuarios" 
-                Command="{Binding ShowUsersCommand}" 
-                Margin="10" 
-                Height="40"
-                Visibility="{Binding ViewMode,
-                                            Converter={StaticResource ModeToVisibilityConverter},
-                                            ConverterParameter=AdminOnly}"/>
-            <Button Content="Configuración" 
-                Command="{Binding ShowSettingsCommand}" 
-                Margin="10" 
-                Height="40"
-                Visibility="{Binding ViewMode,
-                                            Converter={StaticResource ModeToVisibilityConverter},
-                                            ConverterParameter=AdminOnly}"/>
+                <RadioButton Style="{StaticResource NavItem}" Tag="&#xE80F;" Content="Inicio"
+                             Command="{Binding ShowMainViewCommand}" IsChecked="True"/>
+                <Button Style="{StaticResource NavAction}" Tag="&#xE7BF;" Content="Vender"
+                        Command="{Binding OpenCheckoutCommand}"/>
+                <RadioButton Style="{StaticResource NavItem}" Tag="&#xE7B8;" Content="Productos"
+                             Command="{Binding ShowProductsCommand}"/>
+                <RadioButton Style="{StaticResource NavItem}" Tag="&#xE77B;" Content="Clientes"
+                             Command="{Binding ShowClientsCommand}"/>
+                <RadioButton Style="{StaticResource NavItem}" Tag="&#xE81C;" Content="Historial de ventas"
+                             Command="{Binding ShowCheckoutHistoryCommand}"
+                             Visibility="{Binding ViewMode, Converter={StaticResource ModeToVisibilityConverter}, ConverterParameter=AdminOnly}"/>
+                <RadioButton Style="{StaticResource NavItem}" Tag="&#xE716;" Content="Usuarios"
+                             Command="{Binding ShowUsersCommand}"
+                             Visibility="{Binding ViewMode, Converter={StaticResource ModeToVisibilityConverter}, ConverterParameter=AdminOnly}"/>
+                <RadioButton Style="{StaticResource NavItem}" Tag="&#xE713;" Content="Configuración"
+                             Command="{Binding ShowSettingsCommand}"
+                             Visibility="{Binding ViewMode, Converter={StaticResource ModeToVisibilityConverter}, ConverterParameter=AdminOnly}"/>
             </StackPanel>
         </DockPanel>
-        <!-- Dinamic content -->
-        <ContentControl Content="{Binding CurrentView}" />
-    </DockPanel>
+
+        <!-- Current section -->
+        <ContentControl Grid.Column="1" Content="{Binding CurrentView}" Margin="36,30,36,30" Focusable="False"/>
+    </Grid>
 </Window>

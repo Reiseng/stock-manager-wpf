@@ -18,4 +18,6 @@ public static class AppServices
     public static CheckoutService CheckoutService { get; set; }
     public static CompanyPersistence CompanyPersistence { get; set; }
     public static CompanyService CompanyService { get; set; }
+    public static BackupService BackupService { get; set; }
+    public static UpdateService UpdateService { get; set; }
 }

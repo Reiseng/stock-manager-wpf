@@ -89,6 +89,7 @@ namespace StockControl.ViewModels.Checkouts
                     Checkout.OperationType = value;
                     _checkoutService.SetOperationType(value);
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(RequiresRelatedCheckout));
                 }
             }
         }
@@ -99,14 +100,31 @@ namespace StockControl.ViewModels.Checkouts
             {
                 _searchResults = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(HasSearchResults));
             }
         }
+        // Several products matched the typed name: the cashier picks one from a list
+        public bool HasSearchResults => SearchResults.Count > 0;
+
+        // Feedback under the search box (no modal popups while scanning)
+        private string? _searchMessage;
+        public string? SearchMessage
+        {
+            get => _searchMessage;
+            set { _searchMessage = value; OnPropertyChanged(); }
+        }
+
+        // Credit and debit notes must point to an existing sale
+        public bool RequiresRelatedCheckout =>
+            SelectedOperationType == OperationType.CreditNote || SelectedOperationType == OperationType.DebitNote;
         public RelayCommand AddProductCommand { get; }
         public RelayCommand AddClientCommand { get; }
         public RelayCommand ConfirmCheckoutCommand { get; }
         public RelayCommand CancelCommand { get; }
         public RelayCommand RemoveItemCommand { get; }
         public RelayCommand LoggoutCommand { get; }
+        public RelayCommand AddSearchResultCommand { get; }
+        public RelayCommand ClearSearchResultsCommand { get; }
 
         public decimal Total => Checkout?.Total ?? 0;
 
@@ -137,6 +155,8 @@ namespace StockControl.ViewModels.Checkouts
             AddClientCommand = new RelayCommand(_ => OpenAddClient());
             AddProductCommand = new RelayCommand(_ => OpenAddProduct());
             RemoveItemCommand = new RelayCommand(item => RemoveItem((CheckoutItemDto)item));
+            AddSearchResultCommand = new RelayCommand(item => AddSearchResult(item as Product));
+            ClearSearchResultsCommand = new RelayCommand(_ => ClearSearchResults());
             LoggoutCommand = new RelayCommand(_ =>
             {
             if (MessageBox.Show(
@@ -205,6 +225,7 @@ namespace StockControl.ViewModels.Checkouts
 
             OnPropertyChanged(nameof(Total));
             ConfirmCheckoutCommand.RaiseCanExecuteChanged();
+            HighlightedItem = Checkout.Items.FirstOrDefault(i => i.ProductId == _lastProductId);
         }
         private void ConfirmCheckout()
         {
@@ -268,6 +289,9 @@ namespace StockControl.ViewModels.Checkouts
             {
                 ClientDto? selectedClientDto = ClientDto.FromModel(selectedClient);
                 _checkout.Client = selectedClientDto;
+                // Keep the service in sync too: before, scanning a barcode afterwards
+                // rebuilt the cart from the service and the client went back to "Consumidor Final"
+                _checkoutService.SetClient(selectedClient);
             }
                 OnPropertyChanged(nameof(Checkout));
                 OnPropertyChanged(nameof(ClientFullName));
@@ -302,13 +326,7 @@ namespace StockControl.ViewModels.Checkouts
             view.ShowDialog();
 
             if (selectedProduct != null)
-            {
-                ProductDto? selectedProductDto = ProductDto.FromModel(selectedProduct);
-                _checkoutService.AddProduct(selectedProduct, 1);
-            }
-                OnPropertyChanged(nameof(Checkout));
-                OnPropertyChanged(nameof(Checkout.Items));
-            LoadCheckout();
+                AddToCart(selectedProduct, 1);
         }
         public void SetRelatedCheckoutIdFromText()
         {
@@ -334,42 +352,164 @@ namespace StockControl.ViewModels.Checkouts
                 OnPropertyChanged(nameof(Checkout));
             }
         }
+        // ---- Keyboard selling ----
+        // "3*7790001"  adds 3 units of that product (also works with a name: "2*yerba")
+        // "1,5*queso"  decimals for products sold by weight
+        // "3*"         changes the quantity of the last product added to 3
+        // + / -        (with the search box empty) add or remove one unit of the last product
+        private static readonly System.Text.RegularExpressions.Regex QuantityPrefix =
+            new(@"^\s*(\d+(?:[.,]\d+)?)\s*\*\s*(.*)$");
+
+        private int? _lastProductId;
+        private decimal _pendingQuantity = 1;
+
+        // Row highlighted in the grid (the last product added or changed)
+        private CheckoutItemDto? _highlightedItem;
+        public CheckoutItemDto? HighlightedItem
+        {
+            get => _highlightedItem;
+            set { _highlightedItem = value; OnPropertyChanged(); }
+        }
+
+        private void ClearSearchResults()
+        {
+            SearchResults = new ObservableCollection<Product>();
+        }
+        private void AddSearchResult(Product? product)
+        {
+            if (product == null)
+                return;
+            AddToCart(product, _pendingQuantity);
+            _pendingQuantity = 1;
+            ClearSearchResults();
+        }
+        private void AddToCart(Product product, decimal quantity)
+        {
+            try
+            {
+                _checkoutService.AddProduct(product, quantity);
+                _lastProductId = product.Id;
+                RefreshFromService();
+            }
+            catch (Exception ex)
+            {
+                SearchMessage = ex.Message;
+            }
+        }
+
+        // Rebuilds the grid from the service WITHOUT copying the grid back first.
+        // (LoadCheckout copies grid -> service, which is right after editing a cell
+        // but undid programmatic changes: e.g. adding by name a product already in
+        // the cart didn't increase its quantity.)
+        private void RefreshFromService()
+        {
+            var checkout = _checkoutService.GetCurrentCheckout();
+            Checkout.Items.Clear();
+            foreach (var item in checkout.Items)
+                Checkout.Items.Add(CheckoutItemDto.FromModel(item));
+            OnPropertyChanged(nameof(Total));
+            ConfirmCheckoutCommand.RaiseCanExecuteChanged();
+            HighlightedItem = Checkout.Items.FirstOrDefault(i => i.ProductId == _lastProductId);
+        }
+
+        private CheckoutItem? LastItem()
+        {
+            var items = _checkoutService.GetCurrentCheckout().Items;
+            return items.FirstOrDefault(i => i.product.Id == _lastProductId) ?? items.LastOrDefault();
+        }
+
+        private static bool TryParseQuantity(string text, out decimal quantity)
+            => decimal.TryParse(text.Replace('.', ','), System.Globalization.NumberStyles.Number,
+                   new System.Globalization.CultureInfo("es-AR"), out quantity) && quantity > 0 && quantity <= 100000;
+
+        // + / - keys on the empty search box
+        public void ChangeLastQuantity(decimal delta)
+        {
+            SearchMessage = null;
+            var last = LastItem();
+            if (last == null)
+                return;
+            _lastProductId = last.product.Id;
+            _checkoutService.SetQuantity(last.product.Id, last.Quantity + delta); // 0 or less removes it
+            RefreshFromService();
+        }
+
+        private void SetLastQuantity(decimal quantity)
+        {
+            var last = LastItem();
+            if (last == null)
+            {
+                SearchMessage = "Primero agregá un producto.";
+                return;
+            }
+            if (last.product.Unit == UnitType.Unit && quantity % 1 != 0)
+            {
+                SearchMessage = $"{last.product.Name} se vende por unidad: usá un número entero.";
+                return;
+            }
+            _lastProductId = last.product.Id;
+            _checkoutService.SetQuantity(last.product.Id, quantity);
+            RefreshFromService();
+        }
+
         public void AddProductFromSearch()
         {
-            if (string.IsNullOrWhiteSpace(ProductSearchText))
+            SearchMessage = null;
+            ClearSearchResults();
+            _pendingQuantity = 1;
+            var text = ProductSearchText?.Trim() ?? "";
+            if (text.Length == 0)
                 return;
 
+            // 0. Quantity prefix: "3*..." / "3*"
+            decimal quantity = 1;
+            var match = QuantityPrefix.Match(text);
+            if (match.Success)
+            {
+                if (!TryParseQuantity(match.Groups[1].Value, out quantity))
+                {
+                    SearchMessage = "Cantidad inválida.";
+                    return;
+                }
+                text = match.Groups[2].Value.Trim();
+                if (text.Length == 0)
+                {
+                    SetLastQuantity(quantity);
+                    return;
+                }
+            }
+
             // 1. Barcode search
-            if (IsBarcode(ProductSearchText))
+            if (IsBarcode(text))
             {
                 try
                 {
-                    var product = AppServices.ProductService.GetProductByBarcode(ProductSearchText);
-                    if (product == null)
-                        return;
-
-                    _checkoutService.AddProduct(product, 1);
-                    Checkout = CheckoutDto.FromModel(_checkoutService.GetCurrentCheckout());
-                    LoadCheckout();
-                    SearchResults.Clear();
+                    var product = AppServices.ProductService.GetProductByBarcode(text);
+                    AddToCart(product, quantity);
                     return;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    MessageBox.Show(ex.Message);
+                    // Not a known barcode: try it as a name below
                 }
             }
 
             // 2. Search by name
-            var results = AppServices.ProductService.SearchByName(ProductSearchText);
-            SearchResults = new ObservableCollection<Product>(results);
+            var results = AppServices.ProductService.SearchByName(text);
 
-            // 3. If only one result, add it directly
-            if (SearchResults.Count == 1)
+            // 3. If only one result, add it directly; several => show the list
+            if (results.Count == 1)
             {
-                _checkoutService.AddProduct(SearchResults[0], 1);
-                LoadCheckout();
-                SearchResults.Clear();
+                AddToCart(results[0], quantity);
+            }
+            else if (results.Count == 0)
+            {
+                SearchMessage = $"No hay productos con el código o nombre «{text}».";
+            }
+            else
+            {
+                _pendingQuantity = quantity;
+                SearchResults = new ObservableCollection<Product>(results);
             }
         }
         public void OpenActions()

@@ -58,6 +58,7 @@ namespace StockControl.Services
                 throw new Exception("Producto ya registrado");
             if (_product.Price <= 0)
                 throw new Exception("Precio inválido");
+            ValidateStockAndTax(_product.Stock, _product.Tax);
             var existing = _repository.GetByBarcode(_product.Barcode, true);
             if (existing != null)
             {
@@ -93,6 +94,17 @@ namespace StockControl.Services
             Product? product = _repository.GetByID(_product.Id, false);
             if (product == null)
                 throw new Exception("El producto no existe");
+            if (_product.Price.HasValue && _product.Price.Value <= 0)
+                throw new Exception("Precio inválido");
+            ValidateStockAndTax(_product.Stock, _product.Tax);
+            if (_product.Barcode != null && _product.Barcode != product.Barcode)
+            {
+                if (string.IsNullOrWhiteSpace(_product.Barcode))
+                    throw new Exception("Código inválido");
+                var other = _repository.GetByBarcode(_product.Barcode, true);
+                if (other != null && other.Id != product.Id)
+                    throw new Exception("Ya existe un producto con ese código");
+            }
             if (_product.Name != null)
             {
                 product.Name = _product.Name;
@@ -122,6 +134,13 @@ namespace StockControl.Services
                 product.Tax = _product.Tax.Value;
             }
             _repository.Update(product);
+        }
+        private static void ValidateStockAndTax(decimal? stock, decimal? tax)
+        {
+            if (stock.HasValue && stock.Value < 0)
+                throw new Exception("El stock no puede ser negativo");
+            if (tax.HasValue && (tax.Value < 0 || tax.Value > 100))
+                throw new Exception("IVA inválido (debe estar entre 0 y 100)");
         }
         public void RemoveProduct(int id)
         {

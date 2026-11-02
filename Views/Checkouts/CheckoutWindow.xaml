@@ -1,218 +1,314 @@
 <Window x:Class="StockControl.Views.Checkouts.CheckoutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:StockControl.ViewModels.Checkouts"
-        Title="Venta"
+        xmlns:local="clr-namespace:StockControl.Utils"
+        Style="{StaticResource AppWindow}"
+        Title="Caja"
+        Width="1280" Height="800" MinWidth="1000" MinHeight="620"
+        WindowStartupLocation="CenterOwner"
         WindowState="Maximized">
-    <Window.DataContext>
-        <vm:CheckoutViewModel/>
-    </Window.DataContext>
-<DockPanel>
 
-    <!-- Lateral Menu -->
-    <DockPanel DockPanel.Dock="Right"
-               Width="200"
-               Background="#2D2D30"
-               LastChildFill="True">
+    <!-- F12 confirms from anywhere (the cashier keeps the hands on the scanner/keyboard) -->
+    <Window.InputBindings>
+        <KeyBinding Key="F12" Command="{Binding ConfirmCheckoutCommand}"/>
+    </Window.InputBindings>
 
-        <Button DockPanel.Dock="Bottom"
-                Content="Cerrar sesión"
-                Command="{Binding LoggoutCommand}"
-                Margin="10"
-                Visibility="{Binding ViewMode,
-                                            Converter={StaticResource ModeToVisibilityConverter},
-                                            ConverterParameter=CashierOnly}"/>
-
-        <!-- Bottom button -->
-        <Button DockPanel.Dock="Bottom"
-                Content="Cancelar venta"
-                Command="{Binding CancelCommand}"
-                Margin="10"/>
-
-        <!-- Upper buttons -->
-        <StackPanel>
-            <Button Content="+ Producto"
-                    Command="{Binding AddProductCommand}"
-                    Margin="10"/>
-
-            <Button Content="+ Cliente"
-                    Command="{Binding AddClientCommand}"
-                    Margin="10"/>
-
-            <Separator Margin="10"/>
-        </StackPanel>
-
-    </DockPanel>
-
-    <!-- Principal content -->
-    <Grid Margin="15">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>   <!-- cliente / búsqueda -->
-            <RowDefinition Height="*"/>     <!-- grilla -->
-            <RowDefinition Height="Auto"/>  <!-- total / acciones -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="380"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- Client + Search -->
-        <Grid Grid.Row="0" Margin="0 0 0 10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="200"/>
-                <ColumnDefinition Width="310"/>
-                <ColumnDefinition Width="300"/>
-                <ColumnDefinition Width="300"/>
-            </Grid.ColumnDefinitions>
+        <!-- ===== Top bar ===== -->
+        <Border Grid.ColumnSpan="2" Background="{DynamicResource Brush.Sidebar}" Padding="28,0,16,0" Height="60">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Caja" FontFamily="{StaticResource Font.Display}" FontWeight="SemiBold"
+                               FontSize="22" Foreground="White"/>
+                    <Border Width="1" Background="{DynamicResource Brush.SidebarActive}" Margin="18,4"/>
+                    <TextBlock Text="{Binding CurrentUser.Username}" Foreground="{DynamicResource Brush.SidebarText}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Style="{StaticResource NavAction}" HorizontalAlignment="Right" Width="170" Margin="0"
+                        Tag="&#xE7E8;" Content="Cerrar sesión" Command="{Binding LoggoutCommand}"
+                        Visibility="{Binding ViewMode, Converter={StaticResource ModeToVisibilityConverter}, ConverterParameter=CashierOnly}"/>
+            </Grid>
+        </Border>
 
-            <!-- Client info -->
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Cliente:"
-                           FontWeight="Bold"
-                           Margin="0 0 5 0"/>
+        <!-- ===== Left: operation, search and items ===== -->
+        <Grid Grid.Row="1" Margin="28,22,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-                <TextBlock Text="{Binding ClientFullName}"
-                           Margin="0 0 10 0" Foreground="Gray"/>
+            <!-- Operation type, invoice type, related invoice -->
+            <WrapPanel Margin="0,0,0,16">
+                <StackPanel Width="210" Margin="0,0,14,0">
+                    <TextBlock Text="Operación" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding OperationTypes}"
+                              SelectedItem="{Binding SelectedOperationType, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Width="210" Margin="0,0,14,0">
+                    <TextBlock Text="Comprobante" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding InvoiceTypes}"
+                              SelectedItem="{Binding SelectedInvoiceType, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Width="250"
+                            Visibility="{Binding RequiresRelatedCheckout, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,6">
+                        <Run Text="Factura original"/>
+                        <Run Text="{Binding Checkout.RelatedCheckoutId, Mode=OneWay, StringFormat=(N° {0})}"
+                             Foreground="{DynamicResource Brush.Primary}"/>
+                    </TextBlock>
+                    <TextBox x:Name="RelatedCheckoutIDBox"
+                             Text="{Binding RelatedCheckoutIdText, UpdateSourceTrigger=PropertyChanged}"
+                             Tag="N° de factura y Enter"
+                             KeyDown="RelatedCheckoutIdText_KeyDown"/>
+                </StackPanel>
+            </WrapPanel>
 
-                <TextBlock Text="DNI/CUIL:"
-                           FontWeight="Bold"
-                           Margin="0 0 5 0"/>
+            <!-- Scanner / search -->
+            <TextBox Grid.Row="1" x:Name="SearchBox" Style="{StaticResource SearchBox}"
+                     Tag="Escaneá el código o escribí el nombre y apretá Enter (3*código para varias unidades)"
+                     Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
+                     FontSize="18" MinHeight="52"
+                     Loaded="SearchBox_Loaded"
+                     KeyDown="BarcodeTextBox_KeyDown"
+                     PreviewKeyDown="SearchBox_PreviewKeyDown"
+                     PreviewTextInput="SearchBox_PreviewTextInput"/>
 
-                <TextBlock Text="{Binding ClientDocument}"
-                           Foreground="Gray"
-                           Margin="0 0 5 0"/>
-                <TextBlock Text="Numero de factura:"
-                           FontWeight="Bold"
-                           Margin="0 0 5 0"/>
-                <TextBlock Text="{Binding Checkout.RelatedCheckoutId}"
-                           Foreground="Gray"/>
+            <!-- Several matches: pick one -->
+            <Popup Grid.Row="1" PlacementTarget="{Binding ElementName=SearchBox}" Placement="Bottom"
+                   IsOpen="{Binding HasSearchResults, Mode=OneWay}" StaysOpen="True" AllowsTransparency="True"
+                   Width="{Binding ActualWidth, ElementName=SearchBox}"
+                   Closed="ResultsPopup_Closed">
+                <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.LineStrong}"
+                        BorderThickness="1" CornerRadius="8" Margin="0,6,0,0" Padding="6" MaxHeight="360"
+                        PreviewKeyDown="Results_PreviewKeyDown">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" Margin="10,4,4,6">
+                            <TextBlock Text="Varios productos coinciden. Elegí con ↑ ↓ y Enter, o con el mouse:" Style="{StaticResource Subtle}"
+                                       VerticalAlignment="Center"/>
+                            <Button Style="{StaticResource Button.Icon}" Content="&#xE711;" HorizontalAlignment="Right"
+                                    Command="{Binding ClearSearchResultsCommand}" ToolTip="Cerrar"/>
+                        </Grid>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="ResultsList" ItemsSource="{Binding SearchResults}"
+                                          KeyboardNavigation.DirectionalNavigation="Cycle">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource Button.Ghost}" HorizontalContentAlignment="Stretch"
+                                                Padding="10,0" MinHeight="44" Foreground="{DynamicResource Brush.Ink}"
+                                                Command="{Binding DataContext.AddSearchResultCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}">
+                                            <Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}" Margin="0,0,-20,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding Brand}" Foreground="{DynamicResource Brush.Muted}"
+                                                               FontWeight="Normal" Margin="10,0,0,0"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Margin="0,0,40,0" VerticalAlignment="Center"
+                                                           Text="{Binding Price, StringFormat={}{0:C2} + IVA}"
+                                                           Typography.NumeralAlignment="Tabular"/>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Popup>
+
+            <!-- Search feedback + keyboard shortcuts -->
+            <StackPanel Grid.Row="2">
+                <TextBlock Text="{Binding SearchMessage}" Foreground="{DynamicResource Brush.Danger}"
+                           Margin="4,8,0,0"
+                           Visibility="{Binding SearchMessage, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}, ConverterParameter=Inverse}"/>
+                <WrapPanel Margin="2,10,0,0">
+                    <WrapPanel.Resources>
+                        <Style x:Key="Keycap" TargetType="Border">
+                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.LineStrong}"/>
+                            <Setter Property="Background" Value="{DynamicResource Brush.Surface}"/>
+                            <Setter Property="BorderThickness" Value="1,1,1,2"/>
+                            <Setter Property="CornerRadius" Value="4"/>
+                            <Setter Property="Padding" Value="6,0"/>
+                            <Setter Property="Margin" Value="0,0,6,0"/>
+                        </Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontSize" Value="12"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                        </Style>
+                    </WrapPanel.Resources>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,4">
+                        <Border Style="{StaticResource Keycap}"><TextBlock Text="3*código" Foreground="{DynamicResource Brush.Ink}"/></Border>
+                        <TextBlock Text="agrega 3 unidades"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,4">
+                        <Border Style="{StaticResource Keycap}"><TextBlock Text="3*" Foreground="{DynamicResource Brush.Ink}"/></Border>
+                        <TextBlock Text="cambia la cantidad del último"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,4">
+                        <Border Style="{StaticResource Keycap}"><TextBlock Text="+" Foreground="{DynamicResource Brush.Ink}"/></Border>
+                        <Border Style="{StaticResource Keycap}"><TextBlock Text="−" Foreground="{DynamicResource Brush.Ink}"/></Border>
+                        <TextBlock Text="uno más o uno menos del último"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,4">
+                        <Border Style="{StaticResource Keycap}"><TextBlock Text="Esc" Foreground="{DynamicResource Brush.Ink}"/></Border>
+                        <TextBlock Text="borra la búsqueda"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,4">
+                        <Border Style="{StaticResource Keycap}"><TextBlock Text="F12" Foreground="{DynamicResource Brush.Ink}"/></Border>
+                        <TextBlock Text="confirma"/>
+                    </StackPanel>
+                </WrapPanel>
             </StackPanel>
-           <Grid Grid.Column="1" VerticalAlignment="Center"
-                 Visibility="{Binding SelectedOperationType,
-                     Converter={StaticResource ModeToVisibilityConverter},
-                     ConverterParameter=CreditNote}">
-            <TextBox 
-                    x:Name="RelatedCheckoutIDBox"
-                    Text="{Binding RelatedCheckoutIdText, UpdateSourceTrigger=PropertyChanged}"
-                    FontSize="16"
-                    Height="36"
-                    VerticalContentAlignment="Center"
-                    Loaded="SearchBox_Loaded"
-                    KeyDown="RelatedCheckoutIdText_KeyDown"
-                    Margin="0,0,10,0"/>
-            <TextBlock Text="Numero de factura..."
-                                    Foreground="Gray"
-                                    Margin="5,0,10,0"
-                                    VerticalAlignment="Center"
-                                    IsHitTestVisible="False"
-                                    Visibility="{Binding RelatedCheckoutIdText,
-                                            Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}"/>
-            </Grid>
-                
-            <Grid Grid.Column="2" VerticalAlignment="Center">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="200"/>
-                </Grid.ColumnDefinitions>
-            <TextBlock Text="Tipo de Operacion:"
-                       FontWeight="Bold"
-                       Margin= "0 0 5 0"/>
-            <ComboBox Grid.Column="2"
-                      ItemsSource="{Binding OperationTypes}"
-                      SelectedItem="{Binding SelectedOperationType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="0,0,10,0">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            </Grid>
-            <Grid Grid.Column="3" VerticalAlignment="Center">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="200"/>
-                </Grid.ColumnDefinitions>
-            <TextBlock Text="Tipo de factura:"
-                       FontWeight="Bold"
-                       Margin= "0 0 5 0"/>
-            <ComboBox Grid.Column="3"
-                      ItemsSource="{Binding InvoiceTypes}"
-                      SelectedItem="{Binding SelectedInvoiceType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="0,0,10,0">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            </Grid>
-            <!-- input lector -->
-            <Grid Grid.Column="4" VerticalAlignment="Center">
-            <TextBox 
-                    x:Name="SearchBox"
-                    Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
-                    FontSize="16"
-                    Height="36"
-                    VerticalContentAlignment="Center"
-                    Loaded="SearchBox_Loaded"
-                    KeyDown="BarcodeTextBox_KeyDown"/>
-            <TextBlock Text="Buscar producto..."
-                                    Foreground="Gray"
-                                    Margin="5,0,0,0"
-                                    VerticalAlignment="Center"
-                                    IsHitTestVisible="False"
-                                    Visibility="{Binding ProductSearchText,
-                                            Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}"/>
-            </Grid>
+
+            <!-- Items -->
+            <Border Grid.Row="3" Style="{StaticResource GridPanel}" Margin="0,14,0,0">
+                <Grid>
+                    <DataGrid ItemsSource="{Binding Checkout.Items}"
+                              SelectedItem="{Binding HighlightedItem, Mode=TwoWay}"
+                              SelectionChanged="ItemsGrid_SelectionChanged"
+                              CellEditEnding="DataGrid_CellEditEnding"
+                              RowHeight="48" FontSize="15">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Cantidad" Width="110"
+                                                Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.###}}"
+                                                ElementStyle="{StaticResource Cell.Right}" HeaderStyle="{StaticResource Header.Right}"
+                                                EditingElementStyle="{StaticResource Cell.Editor}"/>
+                            <DataGridTextColumn Header="Unidad" Width="100" IsReadOnly="True"
+                                                Binding="{Binding Unit, Converter={StaticResource EnumDescriptionConverter}}"
+                                                ElementStyle="{StaticResource Cell.Muted}"/>
+                            <DataGridTextColumn Header="Precio s/IVA" Width="130"
+                                                Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, StringFormat={}{0:0.##}}"
+                                                ElementStyle="{StaticResource Cell.Right}" HeaderStyle="{StaticResource Header.Right}"
+                                                EditingElementStyle="{StaticResource Cell.Editor}"/>
+                            <DataGridTextColumn Header="IVA" Width="70" IsReadOnly="True"
+                                                Binding="{Binding Tax, StringFormat={}{0:0.##}%}"
+                                                ElementStyle="{StaticResource Cell.Right}" HeaderStyle="{StaticResource Header.Right}"/>
+                            <DataGridTextColumn Header="Subtotal" Width="150" IsReadOnly="True"
+                                                Binding="{Binding Total, StringFormat={}{0:C2}}"
+                                                ElementStyle="{StaticResource Cell.Strong}" HeaderStyle="{StaticResource Header.Right}"/>
+                            <DataGridTemplateColumn Width="60">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource Button.Icon}" Content="&#xE74D;" ToolTip="Quitar"
+                                                Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Empty cart -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <StackPanel.Visibility>
+                            <Binding Path="Checkout.Items.Count" Converter="{x:Static local:ZeroToVisibleConverter.Instance}"/>
+                        </StackPanel.Visibility>
+                        <TextBlock Text="&#xE7BF;" Style="{StaticResource Icon}" FontSize="40"
+                                   Foreground="{DynamicResource Brush.LineStrong}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="La venta está vacía" Style="{StaticResource SectionTitle}"
+                                   HorizontalAlignment="Center" Margin="0,14,0,4"/>
+                        <TextBlock Text="Escaneá un producto o buscalo por nombre arriba."
+                                   Style="{StaticResource Subtle}" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
 
-        <!-- Items -->
-        <DataGrid Grid.Row="1"
-                  ItemsSource="{Binding Checkout.Items}"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  CellEditEnding="DataGrid_CellEditEnding">
+        <!-- ===== Right: client, total and actions ===== -->
+        <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource Brush.Surface}"
+                BorderBrush="{DynamicResource Brush.Line}" BorderThickness="1,0,0,0">
+            <DockPanel Margin="24,22,24,24">
 
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Cant." 
-                                    Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" 
-                                    Width="80"/>
-                <DataGridTextColumn Header="Tipo"
-                                    Binding="{Binding Unit,
-                                        Converter={StaticResource EnumDescriptionConverter}}"
-                                    Width="80" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" Width="100"/>
-                <DataGridTextColumn Header="IVA" Binding="{Binding Tax, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" Width="80" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="100" IsReadOnly="True"/>
-                <DataGridTemplateColumn Header="Acciones" Width="120">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Content="x"
-                                        Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}"
-                                        Height="20" Width="20" Margin="5,0"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-        <!-- Buttons + Total of sale -->
-        <Grid Grid.Row="2" Margin="0 10 0 0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+                <!-- Client -->
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock Text="Cliente" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
+                    <Grid>
+                        <StackPanel Margin="0,0,90,0">
+                            <TextBlock Text="{Binding ClientFullName}" FontSize="16" FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Style="{StaticResource Subtle}">
+                                <Run Text="DNI/CUIL"/>
+                                <Run Text="{Binding ClientDocument, Mode=OneWay}"/>
+                            </TextBlock>
+                        </StackPanel>
+                        <Button Content="Cambiar" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Command="{Binding AddClientCommand}"/>
+                    </Grid>
+                </StackPanel>
 
-            <TextBlock Grid.Column="0" Text="{Binding Total, StringFormat=Total: ${0:N2}}"
-                                FontSize="24"
-                                FontWeight="Bold"
-                                VerticalAlignment="Center"
-                                Margin="0,0,10,0"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="Confirmar"
-                        Command="{Binding ConfirmCheckoutCommand}"
-                        Margin="5"/>
-            </StackPanel>
-        </Grid>
+                <!-- Bottom: cancel -->
+                <Button DockPanel.Dock="Bottom" Style="{StaticResource Button.Danger}" Content="Cancelar venta"
+                        Tag="&#xE711;" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding CancelCommand}" HorizontalAlignment="Stretch"/>
+
+                <!-- Register display + confirm -->
+                <StackPanel DockPanel.Dock="Top" Margin="0,26,0,0">
+                    <Border Background="{DynamicResource Brush.Accent}" CornerRadius="10" Padding="22,18,22,20">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock Text="Total con IVA" Foreground="{DynamicResource Brush.AccentInk}"
+                                           FontSize="14" FontWeight="SemiBold" Opacity="0.85"/>
+                                <TextBlock HorizontalAlignment="Right" Foreground="{DynamicResource Brush.AccentInk}"
+                                           FontSize="13" Opacity="0.85">
+                                    <Run Text="{Binding Checkout.Items.Count, Mode=OneWay}"/>
+                                    <Run Text="ítems"/>
+                                </TextBlock>
+                            </Grid>
+                            <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Right" Margin="0,6,0,0">
+                                <TextBlock Text="{Binding Total, StringFormat={}{0:C2}}"
+                                           FontFamily="{StaticResource Font.Display}" FontWeight="SemiBold" FontSize="52"
+                                           Typography.NumeralAlignment="Tabular"
+                                           Foreground="{DynamicResource Brush.AccentInk}"/>
+                            </Viewbox>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Style="{StaticResource Button.Charge}" Margin="0,14,0,0" HorizontalAlignment="Stretch"
+                            Command="{Binding ConfirmCheckoutCommand}">
+                        <Grid Width="270">
+                            <TextBlock Text="Confirmar" HorizontalAlignment="Center"/>
+                            <Border HorizontalAlignment="Right" VerticalAlignment="Center" CornerRadius="4"
+                                    BorderBrush="{DynamicResource Brush.AccentInk}" BorderThickness="1" Opacity="0.6" Padding="6,1">
+                                <TextBlock Text="F12" FontSize="12" FontFamily="{StaticResource Font.Body}"/>
+                            </Border>
+                        </Grid>
+                    </Button>
+
+                    <Button Margin="0,10,0,0" HorizontalAlignment="Stretch" Tag="&#xE8FD;" Content="Buscar en la lista de productos"
+                            ContentTemplate="{StaticResource IconText}" Command="{Binding AddProductCommand}"/>
+                </StackPanel>
+
+                <Border/>
+            </DockPanel>
+        </Border>
     </Grid>
-</DockPanel>
 </Window>

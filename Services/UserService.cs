@@ -2,17 +2,24 @@ using StockControl.Data;
 using StockControl.Dtos;
 using StockControl.Enums;
 using StockControl.Models;
+using StockControl.Utils;
 using StockControl.Utils.PasswordHelper;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace StockControl.Services
 {
     public class UserService
     {
         private readonly UserPersistence _repository;
+        private readonly string _databasePath;
+        // A saved session expires if it isn't used for this long
+        private static readonly TimeSpan SessionIdleLimit = TimeSpan.FromDays(30);
         public User CurrentUser { get; set; }
-        public UserService(UserPersistence repository)
+        public UserService(UserPersistence repository, string databasePath)
         {
             _repository = repository;
+            _databasePath = databasePath;
         }
         public IReadOnlyList<User> GetUsers(bool includeInactive)
         {
@@ -71,40 +78,53 @@ namespace StockControl.Services
         public void Remove(UserDto userDto)
         {
             User? user = _repository.GetByID(userDto.ID, false);
-            if (user.ID == CurrentUser.ID)
-                throw new Exception("No puedes eliminar tu propio usuario");
-            if (user.Role == RoleType.Admin)
-            {
-                var admins = _repository.GetAll(includeInactive: true).Where(u => u.Role == RoleType.Admin && u.IsActive).ToList();
-                if (admins.Count <= 1)
-                    throw new Exception("Debe haber al menos un usuario administrador activo");
-            }
             if (user == null)
                 throw new Exception("Usuario no encontrado");
+            if (CurrentUser != null && user.ID == CurrentUser.ID)
+                throw new Exception("No puedes eliminar tu propio usuario");
+            if (user.Role == RoleType.Admin && CountActiveAdmins() <= 1)
+                throw new Exception("Debe haber al menos un usuario administrador activo");
             _repository.Remove(user.ID);
+            _repository.DeleteSessionsForUser(user.ID);
         }
         public void Update(UserDto userDto)
         {
             User? user = _repository.GetByID(userDto.ID, false);
-            var existing = _repository.GetByUsername(userDto.Username, true);
-            if (existing != null && existing.ID != user.ID)
-                throw new Exception("Nombre de usuario ya existente");
             if (user == null)
                 throw new Exception("El usuario no existe");
-            if (userDto.Username != null)
+            bool passwordChanged = false;
+            if (!string.IsNullOrWhiteSpace(userDto.Username))
             {
+                var existing = _repository.GetByUsername(userDto.Username, true);
+                if (existing != null && existing.ID != user.ID)
+                    throw new Exception("Nombre de usuario ya existente");
                 user.Username = userDto.Username;
             }
-            if (userDto.Password != null)
+            // When editing, an empty password means "keep the current one".
+            // Before, an empty string was hashed and the user got locked out.
+            if (!string.IsNullOrWhiteSpace(userDto.Password))
             {
+                if (userDto.Password.Length < 8)
+                    throw new Exception("La contraseña debe contener al menos 8 caracteres");
                 user.Password = PasswordHelper.HashPassword(userDto.Password);
+                passwordChanged = true;
             }
-            if (userDto.Role.HasValue)
+            if (userDto.Role.HasValue && userDto.Role.Value != user.Role)
             {
+                // Same rule as Remove: never leave the system without an active admin
+                if (user.Role == RoleType.Admin && CountActiveAdmins() <= 1)
+                    throw new Exception("Debe haber al menos un usuario administrador activo");
                 user.Role = userDto.Role.Value;
             }
             _repository.Update(user);
+            // A new password closes every "keep me signed in" session of that user
+            if (passwordChanged)
+                _repository.DeleteSessionsForUser(user.ID);
+            if (CurrentUser != null && CurrentUser.ID == user.ID)
+                CurrentUser = user;
         }
+        private int CountActiveAdmins()
+            => _repository.GetAll(includeInactive: false).Count(u => u.Role == RoleType.Admin);
         public User Login(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -117,6 +137,11 @@ namespace StockControl.Services
                 throw new Exception("El usuario no existe");
             if(PasswordHelper.Verify(password, user.Password))
             {
+                if (PasswordHelper.NeedsRehash(user.Password))
+                {
+                    user.Password = PasswordHelper.HashPassword(password);
+                    _repository.Update(user);
+                }
                 CurrentUser = user;
                 return CurrentUser;
             }
@@ -127,7 +152,67 @@ namespace StockControl.Services
         }
         public void Loggout()
         {
+            // Logging out on purpose also forgets the saved session on this PC
+            ForgetSavedSession();
             CurrentUser = null;
         }
+
+        // ---- "Mantener sesión iniciada" ----
+
+        // Called right after a successful Login when the checkbox is checked
+        public void RememberCurrentUser()
+        {
+            if (CurrentUser == null)
+                return;
+            ForgetSavedSession();
+            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            _repository.AddSession(CurrentUser.ID, HashToken(token), Environment.MachineName, DateTime.Now);
+            SessionStore.Save(new SavedSession(CurrentUser.ID, token, _databasePath));
+        }
+
+        // On startup: returns the user if there is a valid saved session, otherwise null
+        public User? TryAutoLogin()
+        {
+            var saved = SessionStore.Load();
+            if (saved == null)
+                return null;
+
+            // A session saved against another database (config changed, imported DB...) is ignored
+            if (!string.Equals(saved.DatabasePath, _databasePath, StringComparison.OrdinalIgnoreCase))
+            {
+                SessionStore.Clear();
+                return null;
+            }
+
+            var session = _repository.GetSessionByTokenHash(HashToken(saved.Token));
+            if (session == null || session.UserId != saved.UserId ||
+                DateTime.Now - session.LastUsedAt > SessionIdleLimit)
+            {
+                ForgetSavedSession();
+                return null;
+            }
+
+            var user = _repository.GetByID(saved.UserId, false); // inactive users can't come back in
+            if (user == null)
+            {
+                ForgetSavedSession();
+                return null;
+            }
+
+            _repository.TouchSession(session.Id, DateTime.Now);
+            CurrentUser = user;
+            return user;
+        }
+
+        public void ForgetSavedSession()
+        {
+            var saved = SessionStore.Load();
+            if (saved != null)
+                _repository.DeleteSessionByTokenHash(HashToken(saved.Token));
+            SessionStore.Clear();
+        }
+
+        private static string HashToken(string token)
+            => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     }
-}
+}

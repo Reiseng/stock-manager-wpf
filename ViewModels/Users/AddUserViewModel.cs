@@ -15,6 +15,10 @@ namespace StockControl.ViewModels.Users
         private readonly UserDto? _User;
         public bool IsEditMode { get; private set; }
         public string Title => IsEditMode ? "Editar usuario" : "Agregar usuario";
+        public string PasswordLabel => IsEditMode ? "Nueva contraseña" : "Contraseña*";
+        public string PasswordHint => IsEditMode
+            ? "Dejalo vacío para mantener la contraseña actual"
+            : "Mínimo 8 caracteres";
 
         public Action? ShowSuccessAction { get; set; }
         public UserDto? CreatedUser { get; private set; }

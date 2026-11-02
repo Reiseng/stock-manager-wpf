@@ -5,7 +5,19 @@ using StockControl.Dtos;
 namespace StockControl.Services{
     public class ClientService
     {
+        private const string FinalConsumerDni = "00000000";
         private readonly ClientPersistence _repository;
+
+        // DNI: 7 or 8 digits (older DNIs have 7). CUIL/CUIT: 11 digits.
+        private static void ValidateDni(string? dni)
+        {
+            if (string.IsNullOrWhiteSpace(dni))
+                throw new Exception("Dni inválido");
+            if (!dni.All(char.IsDigit))
+                throw new Exception("El DNI debe contener solo números (sin puntos ni guiones)");
+            if (dni.Length != 7 && dni.Length != 8 && dni.Length != 11)
+                throw new Exception("DNI o CUIL inválido");
+        }
 
         public ClientService(ClientPersistence repository)
         {
@@ -18,13 +30,7 @@ namespace StockControl.Services{
         }
         public Client GetClientByDni(string dni)
         {
-            if (string.IsNullOrWhiteSpace(dni))
-                throw new Exception("Dni inválido");
-            if (!dni.All(char.IsDigit))
-                throw new Exception("El DNI debe contener solo números");
-
-            if (dni.Length != 8 && dni.Length != 11)
-                throw new Exception("DNI o CUIL inválido");
+            ValidateDni(dni);
             Client? client = _repository.GetByDni(dni, includeInactive: false);
             if (client == null)
                 throw new Exception("El cliente no existe");
@@ -41,14 +47,15 @@ namespace StockControl.Services{
         }
         public void AddClient(ClientDto clientDto)
         {
-            if (string.IsNullOrWhiteSpace(clientDto.Dni))
-                throw new Exception("Dni inválido");
+            // Validated BEFORE saving: before, an invalid DNI was saved and then the
+            // window showed an error and stayed open
+            ValidateDni(clientDto.Dni);
             if (string.IsNullOrWhiteSpace(clientDto.Name))
                 throw new Exception("Nombre inválido");
             if (string.IsNullOrWhiteSpace(clientDto.LastName))
                 throw new Exception("Apellido inválido");
-            if (_repository.GetByDni(clientDto.Dni) != null && _repository.GetByDni(clientDto.Dni).IsActive)
-                throw new Exception("Usuario ya registrado");
+            if (_repository.GetByDni(clientDto.Dni) != null)
+                throw new Exception("Cliente ya registrado");
 
             var existing = _repository.GetByDni(clientDto.Dni, includeInactive: true);
             if (existing != null)
@@ -83,10 +90,10 @@ namespace StockControl.Services{
                 throw new Exception("Id inválido");
 
             var client = _repository.GetByID(id);
-            if (client.Dni == "00000000")
-                throw new InvalidOperationException("No se puede eliminar Consumidor Final");
             if (client == null)
                 throw new Exception("El cliente no existe");
+            if (client.Dni == FinalConsumerDni)
+                throw new InvalidOperationException("No se puede eliminar Consumidor Final");
 
             _repository.Remove(client);
         }
@@ -95,8 +102,16 @@ namespace StockControl.Services{
             var client = _repository.GetByID(_client.ID);
             if (client == null)
                 throw new Exception("Cliente no encontrado");
-            if (_client.Dni != null)
+            if (client.Dni == FinalConsumerDni)
+                throw new Exception("No se puede modificar Consumidor Final");
+            if (_client.Dni != null && _client.Dni != client.Dni)
+            {
+                ValidateDni(_client.Dni);
+                var other = _repository.GetByDni(_client.Dni, includeInactive: true);
+                if (other != null && other.ID != client.ID)
+                    throw new Exception("Ya existe un cliente con ese DNI");
                 client.Dni = _client.Dni;
+            }
 
             if (_client.Name != null)
                 client.Name = _client.Name;
@@ -117,20 +132,21 @@ namespace StockControl.Services{
         }
         public Client GetFinalConsumer()
         {
-            var client = _repository.GetByDni("00000000");
+            var client = _repository.GetByDni(FinalConsumerDni, includeInactive: true);
             if (client != null)
-                return client;
-
-            // if don't exist, create it
-            client = new Client
             {
-                Dni = "00000000",
-                Name = "Consumidor",
-                LastName = "Final",
-            };
+                if (!client.IsActive)
+                {
+                    client.IsActive = true;
+                    _repository.Update(client);
+                }
+                return client;
+            }
 
+            // if it doesn't exist, create it (it used to be created inactive and then not found)
+            client = new Client(FinalConsumerDni, "Consumidor", "Final", null, null, null, true);
             _repository.Add(client);
-            return _repository.GetByDni("00000000")!;
+            return _repository.GetByDni(FinalConsumerDni)!;
         }
     }
 

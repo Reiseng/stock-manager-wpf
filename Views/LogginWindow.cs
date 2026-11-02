@@ -10,6 +10,10 @@ namespace StockControl.Views
         {
             InitializeComponent();
         }
+        private void UsernameBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            ((TextBox)sender).Focus();
+        }
         private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
         {
             if (DataContext is LogginWindowViewModel vm)
@@ -18,4 +22,4 @@ namespace StockControl.Views
             }
         }
     }
-}
+}

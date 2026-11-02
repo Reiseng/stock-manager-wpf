@@ -103,7 +103,7 @@ namespace StockControl.Data
                     reader.IsDBNull(4) ? null : reader.GetString(4),
                     reader.IsDBNull(5) ? null : reader.GetString(5),
                     reader.IsDBNull(6) ? null : reader.GetString(6),
-                    true
+                    reader.GetInt32(7) == 1
                 );
                 client.ID = reader.GetInt32(0);
                 return client;

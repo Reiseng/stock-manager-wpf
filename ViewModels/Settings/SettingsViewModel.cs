@@ -5,6 +5,10 @@ using StockControl.Services;
 using System.Windows;
 using StockControl.Enums;
 using StockControl.Views.Windows;
+using StockControl.Services.Database;
+using System.Diagnostics;
+using System.IO;
+using Microsoft.Win32;
 
 namespace StockControl.ViewModels.Settings
 {
@@ -40,6 +44,111 @@ namespace StockControl.ViewModels.Settings
             TaxConditions = Enum.GetValues(typeof(TaxCondition));
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
+
+            ExportDatabaseCommand = new RelayCommand(_ => ExportDatabase());
+            ImportDatabaseCommand = new RelayCommand(_ => ImportDatabase());
+            OpenBackupFolderCommand = new RelayCommand(_ => OpenBackupFolder());
+        }
+
+        // ---- Apariencia ----
+        public IReadOnlyList<ThemeOption> Themes => ThemeService.Themes;
+        public ThemeOption SelectedTheme
+        {
+            get => ThemeService.Current;
+            set
+            {
+                if (value == null || value == ThemeService.Current)
+                    return;
+                ThemeService.Apply(value.Id);
+                OnPropertyChanged();
+            }
+        }
+
+        // ---- Copias de seguridad ----
+        public RelayCommand ExportDatabaseCommand { get; }
+        public RelayCommand ImportDatabaseCommand { get; }
+        public RelayCommand OpenBackupFolderCommand { get; }
+
+        public string DatabasePath => AppServices.BackupService.DatabasePath;
+        public string SchemaVersionText => $"Versión de la base de datos: {DatabaseInitializer.LatestVersion}";
+        public string LastBackupText
+        {
+            get
+            {
+                var last = AppServices.BackupService.LastAutomaticBackup();
+                return last.HasValue
+                    ? $"Última copia automática: {last.Value:dd/MM/yyyy HH:mm} (se hace una por día, se guardan las últimas 30)"
+                    : "Todavía no hay copias automáticas";
+            }
+        }
+
+        private void ExportDatabase()
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = "Exportar copia de la base de datos",
+                FileName = BackupService.SuggestedExportFileName(),
+                DefaultExt = ".db",
+                Filter = "Copia de Stock Manager (*.db)|*.db"
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+            try
+            {
+                AppServices.BackupService.ExportTo(dialog.FileName);
+                MessageBox.Show($"Copia guardada en:\n{dialog.FileName}", "Exportar", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudo exportar: {ex.Message}", "Exportar", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ImportDatabase()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Importar copia de la base de datos",
+                Filter = "Copia de Stock Manager (*.db)|*.db|Todos los archivos (*.*)|*.*"
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            if (MessageBox.Show(
+                    "Se van a REEMPLAZAR todos los datos actuales (productos, clientes, ventas, usuarios) " +
+                    "por los de la copia seleccionada.\n\n" +
+                    "Antes se guarda automáticamente una copia de los datos actuales en la carpeta de copias.\n\n" +
+                    "El programa se va a reiniciar. ¿Continuar?",
+                    "Importar copia",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            try
+            {
+                AppServices.BackupService.ImportFrom(dialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudo importar: {ex.Message}\n\nNo se modificó ningún dato.",
+                    "Importar copia", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Users and data changed completely: restart from scratch
+            AppServices.UserService.ForgetSavedSession();
+            MessageBox.Show("Copia importada correctamente. El programa se va a reiniciar.",
+                "Importar copia", MessageBoxButton.OK, MessageBoxImage.Information);
+            var exe = Environment.ProcessPath;
+            if (exe != null)
+                Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+            Application.Current.Shutdown();
+        }
+
+        private void OpenBackupFolder()
+        {
+            Directory.CreateDirectory(AppServices.BackupService.BackupFolder);
+            Process.Start(new ProcessStartInfo(AppServices.BackupService.BackupFolder) { UseShellExecute = true });
         }
 
         private string? _name;

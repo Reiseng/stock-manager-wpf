@@ -1,84 +1,31 @@
 <UserControl x:Class="StockControl.Views.Users.AddUserView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
-    <Grid Background="#F5F6F8">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- Header -->
-        <Border Grid.Row="0"
-                Background="#2D6CDF"
-                Height="60">
-            <TextBlock Text="{Binding Title}"
-                       Foreground="White"
-                       FontSize="24"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center"/>
-        </Border>
-
-        <!-- Form -->
-        <Border Grid.Row="1"
-                Background="White"
-                Padding="40"
-                CornerRadius="8"
-                Margin="40"
-                MaxWidth="900">
-
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="150"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Username -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Nombre de usuario*" Margin="0,10,0,0"/>
-                <TextBox Grid.Row="0" Grid.Column="1"
-                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Margin="0,10,0,0"/>
-
-                <!-- Password -->
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Contraseña" Margin="0,10,0,0"/>
-                <TextBox Grid.Row="1" Grid.Column="1"
-                         Text="{Binding Password}" Margin="0,10,0,0"/>
-
-                <!-- Role type -->
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Permisos" Margin="0,10,0,0"/>
-                <ComboBox Grid.Row="2" Grid.Column="1"
-                          ItemsSource="{Binding RoleTypes}"
-                          SelectedItem="{Binding SelectedRoleType}" Margin="0,10,0,0">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-
-                <!-- Buttons -->
-                <StackPanel Grid.Row="3"
-                            Grid.ColumnSpan="2"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Margin="0,20,0,0">
-
-                    <Button Content="Guardar"
-                            Width="100"
-                            Margin="0,0,10,0"
-                            Command="{Binding SaveCommand}"/>
-
-                    <Button Content="Cancelar"
-                            Width="100"
-                            Command="{Binding CancelCommand}"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-    </Grid>
+    <StackPanel Width="520" Margin="32,28,32,24">
+        <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" FontSize="24"/>
+        <TextBlock Text="Cada persona que usa el programa debería tener su propio usuario." Style="{StaticResource Subtle}" Margin="0,4,0,8"/>
+        <StackPanel>
+            <TextBlock Text="Nombre de usuario *" Style="{StaticResource FieldLabel}"/>
+            <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+        <TextBlock Text="{Binding PasswordLabel}" Style="{StaticResource FieldLabel}"/>
+        <PasswordBox PasswordChanged="PasswordBox_PasswordChanged" ToolTip="{Binding PasswordHint}"/>
+        <TextBlock Text="{Binding PasswordHint}" Style="{StaticResource Subtle}" Margin="0,6,0,0"/>
+        <TextBlock Text="Permisos" Style="{StaticResource FieldLabel}"/>
+        <ComboBox ItemsSource="{Binding RoleTypes}" SelectedItem="{Binding SelectedRoleType}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+        <TextBlock Style="{StaticResource Subtle}" Margin="0,6,0,0"
+                   Text="Administrador: todo. Repositor: productos y clientes. Cajero: solo la caja."/>
+        <!-- Actions -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,28,0,0">
+            <Button Content="Cancelar" Command="{Binding CancelCommand}" IsCancel="True"/>
+            <Button Content="Guardar" Style="{StaticResource Button.Primary}" Command="{Binding SaveCommand}"
+                    IsDefault="True" Margin="10,0,0,0" MinWidth="120"/>
+        </StackPanel>
+    </StackPanel>
 </UserControl>

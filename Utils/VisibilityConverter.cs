@@ -8,9 +8,11 @@ namespace StockControl.Utils
         {
             public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
             {
-                return string.IsNullOrWhiteSpace(value as string)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
+                // ConverterParameter=Inverse: visible only when there IS text
+                bool empty = string.IsNullOrWhiteSpace(value as string);
+                if (parameter as string == "Inverse")
+                    empty = !empty;
+                return empty ? Visibility.Visible : Visibility.Collapsed;
             }
 
             public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -29,4 +31,4 @@ namespace StockControl.Utils
             public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
                 => throw new NotImplementedException();
         }
-}
+}

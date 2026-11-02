@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using StockControl.Enums;
 using StockControl.Models;
 namespace StockControl.Dtos{
-public class CheckoutDto
+public class CheckoutDto : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
     public int ID { get; set; }

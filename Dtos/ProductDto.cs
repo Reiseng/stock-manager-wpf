@@ -32,7 +32,7 @@ namespace StockControl.Dtos
                 Id = product.Id,
                 Name = product.Name,
                 Barcode = product.Barcode,
-                Brand = product.Barcode,
+                Brand = product.Brand,
                 Stock = product.Stock,
                 Price = product.Price,
                 Unit = product.Unit,

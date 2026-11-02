@@ -47,6 +47,16 @@ namespace StockControl.ViewModels
                 OnPropertyChanged();
             }
         }
+        private bool _rememberMe;
+        public bool RememberMe
+        {
+            get => _rememberMe;
+            set
+            {
+                _rememberMe = value;
+                OnPropertyChanged();
+            }
+        }
         private User user { get; set; }
         public ICommand LogginCommand { get; }
 
@@ -59,32 +69,20 @@ namespace StockControl.ViewModels
             try{
                 
                 user = AppServices.UserService.Login(Username, Password);
-                if (user.Role == Enums.RoleType.Admin || user.Role == Enums.RoleType.Repository)
+                // Each session starts with an empty cart (it used to carry over between users)
+                AppServices.CheckoutService.ClearCheckout();
+                try
                 {
-                    var vm = new MainWindowViewModel();
-                    var view = new MainWindow
-                    {
-                        DataContext = vm
-                    };
-
-                    view.Show();
-
-                    Application.Current.MainWindow.Close();
-                    Application.Current.MainWindow = view;
+                    if (RememberMe)
+                        AppServices.UserService.RememberCurrentUser();
+                    else
+                        AppServices.UserService.ForgetSavedSession();
                 }
-                if (user.Role == Enums.RoleType.Cashier)
+                catch (Exception)
                 {
-                    var vm = new CheckoutViewModel();
-                    var view = new CheckoutWindow
-                    {
-                        DataContext = vm
-                    };
-
-                    view.Show();
-
-                    Application.Current.MainWindow.Close();
-                    Application.Current.MainWindow = view;
+                    // Not being able to save the session must never block the login
                 }
+                WindowNavigator.ShowHomeFor(user);
             }
             catch(Exception ex)
             {
@@ -92,4 +90,4 @@ namespace StockControl.ViewModels
             }
         }
     }
-}
+}

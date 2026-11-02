@@ -1,124 +1,108 @@
 <UserControl x:Class="StockControl.Views.MainView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-             
-    <Grid Margin="20" Background="#F5F5F5">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="1100" HorizontalAlignment="Stretch">
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- Welcome -->
-        <Border Grid.Row="0"
-                Background="#2D2D30"
-                Height="60">
-        <TextBlock Grid.Row="0"
-                   Text="Panel de control"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Foreground="White"
-                   Margin="20,0,0,0"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"/>
-        </Border>
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!--  DATOS DE EMPRESA -->
-            <Border Grid.Column="0"
-                    Margin="10"
-                    Padding="20"
-                    Background="White"
-                    CornerRadius="10">
-
+            <!-- Header -->
+            <Grid Margin="0,0,0,24">
                 <StackPanel>
-                    <TextBlock Text="Datos de la Empresa"
-                               FontSize="18"
-                               FontWeight="Bold"
-                               Margin="0,0,0,15"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
-                    
-                    <TextBlock Text= "Nombre"
-                               FontWeight="Bold"
-                               Margin="0,10,0,0"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding Empresa.Name, UpdateSourceTrigger=PropertyChanged}" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <TextBlock Text="Teléfono"
-                               FontWeight="Bold"
-                               Margin="0,10,0,0"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding Empresa.Phone, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <TextBlock Text="Email"
-                               FontWeight="Bold"
-                               Margin="0,10,0,0"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding Empresa.Email, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <TextBlock Text="Dirección"
-                               FontWeight="Bold"
-                               Margin="0,10,0,0"
-                               HorizontalAlignment="Center"/>
-
-                    <TextBlock Text="{Binding Empresa.Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <TextBlock Text="CUIT"
-                               FontWeight="Bold"
-                               Margin="0,10,0,0"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding Empresa.CUIT, UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
+                    <TextBlock Style="{StaticResource PageTitle}">
+                        <Run Text="Hola,"/>
+                        <Run Text="{Binding CurrentUser.Username, Mode=OneWay}"/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Subtle}" Margin="0,4,0,0">
+                        <Run Text="Datos actualizados el"/>
+                        <Run Text="{Binding UltimaActualizacion, Mode=OneWay}"/>
+                    </TextBlock>
                 </StackPanel>
+                <Button Style="{StaticResource Button.Primary}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Tag="&#xE7BF;" Content="Nueva venta" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding OpenCheckoutCommand}"/>
+            </Grid>
+
+            <!-- Figures: one panel, three columns separated by rules -->
+            <Border Style="{StaticResource Panel}" Padding="0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="1"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="1"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Margin="28,22">
+                        <TextBlock Text="Productos activos" Style="{StaticResource Subtle}"/>
+                        <TextBlock Text="{Binding TotalProductos}" Style="{StaticResource Figure}" Margin="0,6,0,0"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="1" Background="{DynamicResource Brush.Line}" Margin="0,18"/>
+
+                    <StackPanel Grid.Column="2" Margin="28,22">
+                        <TextBlock Text="Con stock bajo (menos de 10)" Style="{StaticResource Subtle}"/>
+                        <TextBlock Text="{Binding ProductosStockBajo}" Margin="0,6,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Figure}">
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Danger}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ProductosStockBajo}" Value="0">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Primary}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <Border Grid.Column="3" Background="{DynamicResource Brush.Line}" Margin="0,18"/>
+
+                    <StackPanel Grid.Column="4" Margin="28,22">
+                        <TextBlock Text="Tu usuario" Style="{StaticResource Subtle}"/>
+                        <TextBlock Text="{Binding CurrentUser.Role, Converter={StaticResource EnumDescriptionConverter}}"
+                                   FontFamily="{StaticResource Font.Display}" FontSize="24" FontWeight="SemiBold"
+                                   Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Grid>
             </Border>
 
-            <!--  RESUMEN -->
-            <StackPanel Grid.Column="1">
+            <!-- Business data -->
+            <Border Style="{StaticResource Panel}" Margin="0,20,0,0">
+                <StackPanel>
+                    <TextBlock Text="Datos del negocio" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Text="Aparecen en los comprobantes. Se cambian desde Configuración."
+                               Style="{StaticResource Subtle}" Margin="0,4,0,16"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.Resources>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Margin" Value="0,0,0,10"/>
+                            </Style>
+                        </Grid.Resources>
 
-                <!-- Total productos -->
-                <Border Margin="10"
-                        Padding="15"
-                        Background="White"
-                        CornerRadius="10">
-                    <StackPanel>
-                        <TextBlock Text="Productos"
-                                   FontWeight="Bold"/>
-                        <TextBlock Text="{Binding TotalProductos, UpdateSourceTrigger=PropertyChanged}"
-                                   FontSize="20"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Stock bajo -->
-                <Border Margin="10"
-                        Padding="15"
-                        Background="White"
-                        CornerRadius="10">
-                    <StackPanel>
-                        <TextBlock Text="Stock bajo"
-                                   FontWeight="Bold"/>
-                        <TextBlock Text="{Binding ProductosStockBajo, UpdateSourceTrigger=PropertyChanged}"
-                                   FontSize="20"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Solo Admin -->
-                <Border Margin="10"
-                        Padding="15"
-                        Background="White"
-                        CornerRadius="10"
-                        Visibility="{Binding ViewMode,
-                            Converter={StaticResource ModeToVisibilityConverter},
-                            ConverterParameter=AdminOnly}">
-                    <StackPanel>
-                        <TextBlock Text="Última actualización"
-                                   FontWeight="Bold"/>
-                        <TextBlock Text="{Binding UltimaActualizacion, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                </Border>
-
-            </StackPanel>
-        </Grid>
-
-    </Grid>
+                        <TextBlock Grid.Row="0" Text="Nombre" Foreground="{DynamicResource Brush.Muted}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Empresa.Name}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Text="CUIT" Foreground="{DynamicResource Brush.Muted}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Empresa.CUIT}"/>
+                        <TextBlock Grid.Row="2" Text="Dirección" Foreground="{DynamicResource Brush.Muted}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Empresa.Address}"/>
+                        <TextBlock Grid.Row="3" Text="Teléfono" Foreground="{DynamicResource Brush.Muted}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Empresa.Phone}"/>
+                        <TextBlock Grid.Row="4" Text="Email" Foreground="{DynamicResource Brush.Muted}"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Empresa.Email}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

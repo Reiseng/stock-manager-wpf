@@ -128,6 +128,69 @@ namespace StockControl.Data
             command.Parameters.AddWithValue("@id", id);
             command.ExecuteNonQuery();
         }
+        // ---- Saved sessions ("mantener sesión iniciada") ----
+        public void AddSession(int userId, string tokenHash, string deviceName, DateTime now)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO UserSessions (UserId, TokenHash, DeviceName, CreatedAt, LastUsedAt)
+                VALUES (@userId, @tokenHash, @deviceName, @now, @now);
+                ";
+            command.Parameters.AddWithValue("@userId", userId);
+            command.Parameters.AddWithValue("@tokenHash", tokenHash);
+            command.Parameters.AddWithValue("@deviceName", deviceName);
+            command.Parameters.AddWithValue("@now", now.ToString("yyyy-MM-dd HH:mm:ss"));
+            command.ExecuteNonQuery();
+        }
+        public UserSession? GetSessionByTokenHash(string tokenHash)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT Id, UserId, LastUsedAt
+                FROM UserSessions
+                WHERE TokenHash = @tokenHash;
+                ";
+            command.Parameters.AddWithValue("@tokenHash", tokenHash);
+            using var reader = command.ExecuteReader();
+            if (!reader.Read())
+                return null;
+            return new UserSession(
+                reader.GetInt32(0),
+                reader.GetInt32(1),
+                DateTime.ParseExact(reader.GetString(2), "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
+        }
+        public void TouchSession(int sessionId, DateTime now)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE UserSessions SET LastUsedAt = @now WHERE Id = @id;";
+            command.Parameters.AddWithValue("@now", now.ToString("yyyy-MM-dd HH:mm:ss"));
+            command.Parameters.AddWithValue("@id", sessionId);
+            command.ExecuteNonQuery();
+        }
+        public void DeleteSessionByTokenHash(string tokenHash)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM UserSessions WHERE TokenHash = @tokenHash;";
+            command.Parameters.AddWithValue("@tokenHash", tokenHash);
+            command.ExecuteNonQuery();
+        }
+        public void DeleteSessionsForUser(int userId)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM UserSessions WHERE UserId = @userId;";
+            command.Parameters.AddWithValue("@userId", userId);
+            command.ExecuteNonQuery();
+        }
         public void Update(User user)
         {
             using var connection = db.CreateConnection();
@@ -150,4 +213,4 @@ namespace StockControl.Data
                 command.ExecuteNonQuery();
         }
     }
-}
+}

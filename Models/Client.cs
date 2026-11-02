@@ -14,7 +14,7 @@ namespace StockControl.Models
         => $"{Name} {LastName}";
         //Constructors
 
-        public Client(string dni, string name, string lastName, string email, string phone, string address, bool isActive){
+        public Client(string dni, string name, string lastName, string phone, string email, string address, bool isActive){
             Dni = dni;
             Name = name;
             LastName = lastName;

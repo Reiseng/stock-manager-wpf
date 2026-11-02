@@ -1,4 +1,5 @@
 // Checkout is the process of finalizing a sale or transaction, typically involving payment and receipt generation.
+using Microsoft.Data.Sqlite;
 using StockControl.Config.DataBaseConfig;
 using StockControl.Enums;
 using StockControl.Models;
@@ -6,6 +7,9 @@ using StockControl.Services;
 
 namespace StockControl.Data
 {
+    // Delta < 0 takes stock out (sale), Delta > 0 puts it back (credit note)
+    public record StockChange(int ProductId, string ProductName, decimal Delta);
+
     public class CheckoutPersistence
     {
         private readonly DatabaseContext db;
@@ -142,10 +146,57 @@ namespace StockControl.Data
             }
         return null;
         }
-        public Checkout Add(Checkout _checkout)
+        // Sum of quantities already returned through credit notes, per product
+        public Dictionary<int, decimal> GetCreditedQuantities(int relatedCheckoutId)
+        {
+            var result = new Dictionary<int, decimal>();
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT ci.ProductId, SUM(ci.Quantity)
+                FROM CheckoutItems ci
+                JOIN Checkouts c ON c.Id = ci.CheckoutId
+                WHERE c.RelatedCheckoutId = @relatedId AND c.OperationType = @creditNote
+                GROUP BY ci.ProductId;
+            ";
+            command.Parameters.AddWithValue("@relatedId", relatedCheckoutId);
+            command.Parameters.AddWithValue("@creditNote", (int)OperationType.CreditNote);
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+                result[reader.GetInt32(0)] = reader.GetDecimal(1);
+            return result;
+        }
+        public Checkout Add(Checkout _checkout, IEnumerable<StockChange> stockChanges)
         {
             using var connection = db.CreateConnection();
             connection.Open();
+            // Everything below commits together or not at all
+            using var transaction = connection.BeginTransaction();
+
+            foreach (var change in stockChanges)
+            {
+                using var stockCommand = connection.CreateCommand();
+                if (change.Delta < 0)
+                {
+                    // Conditional update: the stock check and the decrement are one atomic
+                    // statement, so two registers can't sell the last unit at the same time
+                    stockCommand.CommandText = @"
+                        UPDATE Products SET Stock = Stock - @qty
+                        WHERE Id = @id AND Stock >= @qty;";
+                }
+                else
+                {
+                    stockCommand.CommandText = @"
+                        UPDATE Products SET Stock = Stock + @qty
+                        WHERE Id = @id;";
+                }
+                stockCommand.Parameters.Add("@qty", SqliteType.Real).Value = (double)Math.Abs(change.Delta);
+                stockCommand.Parameters.AddWithValue("@id", change.ProductId);
+                if (stockCommand.ExecuteNonQuery() == 0)
+                    throw new Exception($"Stock insuficiente para {change.ProductName}");
+            }
+
             using var command = connection.CreateCommand();
             command.CommandText = @"
                 INSERT INTO Checkouts (ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId)
@@ -173,6 +224,7 @@ namespace StockControl.Data
                 itemCommand.Parameters.AddWithValue("@unitPrice", item.UnitPrice);
                 itemCommand.ExecuteNonQuery();
             }
+            transaction.Commit();
             _checkout.ID = (int)checkoutId;
             return _checkout;
         }

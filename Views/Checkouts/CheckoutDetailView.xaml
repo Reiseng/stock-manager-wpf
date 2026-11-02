@@ -1,81 +1,63 @@
 <UserControl x:Class="StockControl.Views.Checkouts.CheckoutDetailView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
-<DockPanel>
-    <!-- Principal content -->
-    <Grid Margin="15">
+    <Grid Margin="32,28" Width="820">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>   <!-- Client/Search-->
-            <RowDefinition Height="*"/>     <!-- grill -->
-            <RowDefinition Height="Auto"/>  <!-- total / actions -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Client + Search -->
-        <Grid Grid.Row="0" Margin="0 0 0 10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="300"/>
-            </Grid.ColumnDefinitions>
+        <!-- Header -->
+        <StackPanel>
+            <TextBlock Style="{StaticResource PageTitle}" FontSize="24">
+                <Run Text="Comprobante N°"/>
+                <Run Text="{Binding ID, Mode=OneWay}"/>
+            </TextBlock>
+            <TextBlock Text="{Binding Date, StringFormat={}{0:dddd dd/MM/yyyy, HH:mm}}" Style="{StaticResource Subtle}" Margin="0,4,0,0"/>
+        </StackPanel>
 
-            <!-- Client info -->
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Cliente:"
-                           FontWeight="Bold"
-                           Margin="0 0 5 0"/>
-
-                <TextBlock Text="{Binding ClientFullName, PresentationTraceSources.TraceLevel=High}"
-                           Margin="0 0 10 0"/>
-                           
-                <TextBlock Text="DNI/CUIL:"
-                           FontWeight="Bold"
-                           Margin="0 0 5 0"/>
-
-                <TextBlock Text="{Binding ClientDocument, PresentationTraceSources.TraceLevel=High}"
-                           Foreground="Gray"/>
+        <!-- Client -->
+        <Border Grid.Row="1" Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="8" Padding="16,12" Margin="0,18,0,16">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE77B;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Muted}" Margin="0,0,12,0"/>
+                <TextBlock Text="{Binding ClientFullName}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Style="{StaticResource Subtle}" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Run Text="DNI/CUIL"/>
+                    <Run Text="{Binding ClientDocument, Mode=OneWay}"/>
+                </TextBlock>
             </StackPanel>
-
-        </Grid>
+        </Border>
 
         <!-- Items -->
-        <DataGrid Grid.Row="1"
-                  ItemsSource="{Binding Items}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  CanUserAddRows="False">
+        <Border Grid.Row="2" Style="{StaticResource GridPanel}" MaxHeight="380">
+            <DataGrid ItemsSource="{Binding Items}" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="*"/>
+                    <DataGridTextColumn Header="Cantidad" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="90"
+                                        ElementStyle="{StaticResource Cell.Right}" HeaderStyle="{StaticResource Header.Right}"/>
+                    <DataGridTextColumn Header="Unidad" Binding="{Binding Unit, Converter={StaticResource EnumDescriptionConverter}}" Width="100"
+                                        ElementStyle="{StaticResource Cell.Muted}"/>
+                    <DataGridTextColumn Header="Precio s/IVA" Binding="{Binding UnitPrice, StringFormat={}{0:C2}}" Width="120"
+                                        ElementStyle="{StaticResource Cell.Right}" HeaderStyle="{StaticResource Header.Right}"/>
+                    <DataGridTextColumn Header="IVA" Binding="{Binding Tax, StringFormat={}{0:0.##}%}" Width="70"
+                                        ElementStyle="{StaticResource Cell.Right}" HeaderStyle="{StaticResource Header.Right}"/>
+                    <DataGridTextColumn Header="Subtotal" Binding="{Binding Total, StringFormat={}{0:C2}}" Width="130"
+                                        ElementStyle="{StaticResource Cell.Strong}" HeaderStyle="{StaticResource Header.Right}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
 
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Producto" Binding="{Binding ProductName}" Width="Auto"/>
-                <DataGridTextColumn Header="Cant." Binding="{Binding Quantity}" Width="80"/>
-                <DataGridTextColumn Header="Tipo"
-                                    Binding="{Binding Unit,
-                                        Converter={StaticResource EnumDescriptionConverter}}"
-                                    Width="80"/>
-                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice}" Width="100"/>
-                    <DataGridTextColumn Header="IVA" Binding="{Binding Tax}" Width="80"/>
-                <DataGridTextColumn Header="Total" Binding="{Binding Total}" Width="100"/>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <!-- Button + Total of sale -->
-        <Grid Grid.Row="2" Margin="0 10 0 0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Text="{Binding Total, StringFormat=Total+IVA: ${0:N2}}"
-                       FontSize="28"
-                       FontWeight="Bold"
-                       VerticalAlignment="Center"/>
-
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="PDF"
-                        Command="{Binding PrintPDFCommand}"
-                        Margin="5"/>
+        <!-- Total + PDF -->
+        <Grid Grid.Row="3" Margin="0,18,0,0">
+            <StackPanel>
+                <TextBlock Text="Total con IVA" Style="{StaticResource Subtle}"/>
+                <TextBlock Text="{Binding Total, StringFormat={}{0:C2}}" Style="{StaticResource Figure}"/>
             </StackPanel>
+            <Button Style="{StaticResource Button.Primary}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Tag="&#xE749;" Content="Generar PDF" ContentTemplate="{StaticResource IconText}"
+                    Command="{Binding PrintPDFCommand}"/>
         </Grid>
     </Grid>
-
-</DockPanel>
 </UserControl>

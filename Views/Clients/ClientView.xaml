@@ -1,121 +1,72 @@
 <UserControl x:Class="StockControl.Views.Clients.ClientView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
-    <Grid Margin="20">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:StockControl.Utils"
+             Background="{DynamicResource Brush.Bg}">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Title of section -->
-        <Border Grid.Row="0"
-                Background="#2D2D30"
-                Padding="10"
-                CornerRadius="5"
-                Margin="0,0,0,10">
-            <TextBlock Text="Listado de clientes"
-                       FontSize="22"
-                       FontWeight="Bold"
-                       Foreground="White"/>
-        </Border>
+        <!-- Title -->
+        <StackPanel Margin="0,0,0,20">
+            <TextBlock Text="Clientes" Style="{StaticResource PageTitle}"/>
+            <TextBlock Style="{StaticResource Subtle}" Margin="0,4,0,0">
+                <Run Text="{Binding Clients.Count, Mode=OneWay}"/>
+                <Run Text="clientes"/>
+            </TextBlock>
+        </StackPanel>
 
-        <!-- Search box + buttons -->
-        <Grid Grid.Row="1"
-              Margin="0,0,0,10">
+        <!-- Search + actions -->
+        <Grid Grid.Row="1" Margin="0,0,0,14">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MaxWidth="440"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-
-            <!-- Search box -->
-            <Grid Grid.Column="0"
-                  Width="Auto"
-                  Height="30"
-                  Margin="0,0,10,0">
-                <TextBox
-                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                    VerticalContentAlignment="Center"
-                    Loaded="SearchBox_Loaded"/>
-
-                <TextBlock Text="Buscar cliente..."
-                           Foreground="Gray"
-                           Margin="5,0,0,0"
-                           VerticalAlignment="Center"
-                           IsHitTestVisible="False"
-                           Visibility="{Binding SearchText,
-                                Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}"/>
-            </Grid>
-
-            <!-- Buttons -->
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right">
-                <Button Content="Agregar"
-                        Width="80"
-                        Height="30"
-                        Margin="0,0,10,0"
-                        Command="{Binding AddCommand}"/>
-
-            <Button Content="Editar"
-                    Width="80"
-                    Height="30"
-                    Margin="0,0,10,0"
-                    Command="{Binding EditCommand}"
-                    IsEnabled="{Binding CanEditClients}"
-                    Visibility="{Binding ViewMode,
-                                        Converter={StaticResource ModeToVisibilityConverter},
-                                        ConverterParameter=Editable}"/>
-            <Button Content="Eliminar"
-                    Width="80"
-                    Height="30"
-                    Margin="0,0,10,0"
-                    Command="{Binding DeleteCommand}"
-                    IsEnabled="{Binding CanEditClients}"
-                    Visibility="{Binding ViewMode,
-                                        Converter={StaticResource ModeToVisibilityConverter},
-                                        ConverterParameter=Editable}"/>
-            <Button Content="Seleccionar"
-                    Width="80"
-                    Height="30"
-                    Margin="0,0,10,0"
-                    Command="{Binding ConfirmCommand}"
-                    IsEnabled="{Binding CanEditClients}"
-                    Visibility="{Binding ViewMode,
-                                        Converter={StaticResource ModeToVisibilityConverter},
-                                        ConverterParameter=SelectOnly}" />
+            <TextBox Style="{StaticResource SearchBox}" Tag="Buscar por nombre o DNI"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Loaded="SearchBox_Loaded"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{StaticResource Button.Danger}" Tag="&#xE74D;" Content="Eliminar" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding DeleteCommand}" Margin="10,0,0,0"
+                        Visibility="{Binding ViewMode, Converter={StaticResource ModeToVisibilityConverter}, ConverterParameter=Editable}"/>
+                <Button Tag="&#xE70F;" Content="Editar" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding EditCommand}" Margin="10,0,0,0"
+                        Visibility="{Binding ViewMode, Converter={StaticResource ModeToVisibilityConverter}, ConverterParameter=Editable}"/>
+                <Button Style="{StaticResource Button.Primary}" Tag="&#xE710;" Content="Agregar cliente" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding AddCommand}" Margin="10,0,0,0"/>
+                <Button Style="{StaticResource Button.Primary}" Tag="&#xE73E;" Content="Seleccionar" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding ConfirmCommand}" Margin="10,0,0,0"
+                        Visibility="{Binding ViewMode, Converter={StaticResource ModeToVisibilityConverter}, ConverterParameter=SelectOnly}" IsDefault="True"/>
             </StackPanel>
         </Grid>
 
-        <!-- List of clients -->
-        <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding Clients}"
-                  SelectedItem="{Binding SelectedClient, Mode=TwoWay}"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  IsReadOnly="True">
-
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Dni/Cuil"
-                                    Binding="{Binding Dni}"
-                                    Width="*"/>
-                <DataGridTextColumn Header="Apellido"
-                                    Binding="{Binding LastName}"
-                                    Width="*"/>
-                <DataGridTextColumn Header="Nombre"
-                                    Binding="{Binding Name}"
-                                    Width="2*"/>
-                <DataGridTextColumn Header="Email"
-                                    Binding="{Binding Email}"
-                                    Width="Auto"/>
-                <DataGridTextColumn Header="Phone"
-                                    Binding="{Binding Phone}"
-                                    Width="Auto"/>
-                <DataGridTextColumn Header="Address"
-                                    Binding="{Binding Address}"
-                                    Width="Auto"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        <!-- List -->
+        <Border Grid.Row="2" Style="{StaticResource GridPanel}">
+            <Grid>
+                <DataGrid ItemsSource="{Binding Clients}"
+                          SelectedItem="{Binding SelectedClient, Mode=TwoWay}"
+                          IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="DNI / CUIL" Binding="{Binding Dni}" Width="130" ElementStyle="{StaticResource Cell.Muted}"/>
+                        <DataGridTextColumn Header="Apellido" Binding="{Binding LastName}" Width="*"/>
+                        <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Teléfono" Binding="{Binding Phone}" Width="140"/>
+                        <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="1.4*"/>
+                        <DataGridTextColumn Header="Dirección" Binding="{Binding Address}" Width="1.4*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Text="No hay clientes cargados. «Consumidor final» se usa automáticamente cuando no elegís uno." Style="{StaticResource Subtle}" HorizontalAlignment="Center"
+                           VerticalAlignment="Center" TextAlignment="Center" MaxWidth="360" IsHitTestVisible="False">
+                    <TextBlock.Visibility>
+                        <Binding Path="Clients.Count">
+                            <Binding.Converter><x:Static Member="local:ZeroToVisibleConverter.Instance"/></Binding.Converter>
+                        </Binding>
+                    </TextBlock.Visibility>
+                </TextBlock>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

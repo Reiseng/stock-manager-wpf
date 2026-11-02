@@ -5,21 +5,32 @@
     <AssemblyName>StockManager</AssemblyName>
     <Product>Stock Manager</Product>
     <TargetFramework>net9.0-windows</TargetFramework>
-    <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- Custom Main (Program.cs): Velopack must run before WPF starts -->
+    <StartupObject>StockControl.Program</StartupObject>
     <Version>1.0.0</Version>
     <Company>Reiseng Software</Company>
     <Authors>Facundo Reiseng</Authors>
   </PropertyGroup>
   
   <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="assets\logo.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.2" />
     <PackageReference Include="QuestPDF" Version="2025.12.3" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.2" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
 </Project>

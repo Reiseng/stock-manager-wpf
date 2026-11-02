@@ -4,11 +4,13 @@ using QuestPDF.Infrastructure;
 using QuestPDF.Fluent;
 using StockControl.Enums;
 using StockControl.Utils;
+using System.IO;
 
 namespace StockControl.Services
 {
     public class InvoiceDocumentService : IDocument
     {
+        
         public InvoiceDto Invoice { get; set; }
         public InvoiceDocumentService(InvoiceDto invoice)
         {
@@ -31,6 +33,11 @@ namespace StockControl.Services
         }
         public void ComposeHeader(IContainer container)
         {
+            var logoPath = Path.Combine(
+                AppContext.BaseDirectory,
+                "assets",
+                "logo.png"
+            );
             container.PaddingVertical(10).PaddingHorizontal(20).Row(row =>
             {
                 row.RelativeItem().Column(column =>
@@ -39,7 +46,8 @@ namespace StockControl.Services
                     column.Item().Text($"Tipo de factura: {Invoice.invoiceType.GetDescription()}").FontSize(12);
                     column.Item().Text($"Fecha: {Invoice.date:dd/MM/yyyy}").FontSize(12);
                 });
-                row.ConstantItem(100).Height(50).Placeholder();
+                if (File.Exists(logoPath))
+                    row.ConstantItem(150).Height(60).Image(logoPath);
             });
         }
         public void ComposeContent(IContainer container)

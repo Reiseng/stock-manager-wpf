@@ -1,0 +1,45 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Paleta "Oscuro". Todos los temas definen exactamente las mismas claves. -->
+    <Color x:Key="C.Bg">#131A18</Color>
+    <Color x:Key="C.Surface">#1B2421</Color>
+    <Color x:Key="C.SurfaceAlt">#212C29</Color>
+    <Color x:Key="C.Line">#2D3A36</Color>
+    <Color x:Key="C.LineStrong">#3E4E49</Color>
+    <Color x:Key="C.Ink">#E4ECE8</Color>
+    <Color x:Key="C.Muted">#98A9A2</Color>
+    <Color x:Key="C.Primary">#6BB89A</Color>
+    <Color x:Key="C.PrimaryHover">#82C9AD</Color>
+    <Color x:Key="C.PrimarySoft">#24392F</Color>
+    <Color x:Key="C.OnPrimary">#0D1A15</Color>
+    <Color x:Key="C.Sidebar">#0E1412</Color>
+    <Color x:Key="C.SidebarHover">#1A2421</Color>
+    <Color x:Key="C.SidebarActive">#24332E</Color>
+    <Color x:Key="C.SidebarText">#A6B9B1</Color>
+    <Color x:Key="C.Accent">#E3AC34</Color>
+    <Color x:Key="C.AccentHover">#EFBD4F</Color>
+    <Color x:Key="C.AccentInk">#241B03</Color>
+    <Color x:Key="C.Danger">#E8867A</Color>
+    <Color x:Key="C.DangerSoft">#3B2421</Color>
+
+    <SolidColorBrush x:Key="Brush.Bg" Color="{StaticResource C.Bg}"/>
+    <SolidColorBrush x:Key="Brush.Surface" Color="{StaticResource C.Surface}"/>
+    <SolidColorBrush x:Key="Brush.SurfaceAlt" Color="{StaticResource C.SurfaceAlt}"/>
+    <SolidColorBrush x:Key="Brush.Line" Color="{StaticResource C.Line}"/>
+    <SolidColorBrush x:Key="Brush.LineStrong" Color="{StaticResource C.LineStrong}"/>
+    <SolidColorBrush x:Key="Brush.Ink" Color="{StaticResource C.Ink}"/>
+    <SolidColorBrush x:Key="Brush.Muted" Color="{StaticResource C.Muted}"/>
+    <SolidColorBrush x:Key="Brush.Primary" Color="{StaticResource C.Primary}"/>
+    <SolidColorBrush x:Key="Brush.PrimaryHover" Color="{StaticResource C.PrimaryHover}"/>
+    <SolidColorBrush x:Key="Brush.PrimarySoft" Color="{StaticResource C.PrimarySoft}"/>
+    <SolidColorBrush x:Key="Brush.OnPrimary" Color="{StaticResource C.OnPrimary}"/>
+    <SolidColorBrush x:Key="Brush.Sidebar" Color="{StaticResource C.Sidebar}"/>
+    <SolidColorBrush x:Key="Brush.SidebarHover" Color="{StaticResource C.SidebarHover}"/>
+    <SolidColorBrush x:Key="Brush.SidebarActive" Color="{StaticResource C.SidebarActive}"/>
+    <SolidColorBrush x:Key="Brush.SidebarText" Color="{StaticResource C.SidebarText}"/>
+    <SolidColorBrush x:Key="Brush.Accent" Color="{StaticResource C.Accent}"/>
+    <SolidColorBrush x:Key="Brush.AccentHover" Color="{StaticResource C.AccentHover}"/>
+    <SolidColorBrush x:Key="Brush.AccentInk" Color="{StaticResource C.AccentInk}"/>
+    <SolidColorBrush x:Key="Brush.Danger" Color="{StaticResource C.Danger}"/>
+    <SolidColorBrush x:Key="Brush.DangerSoft" Color="{StaticResource C.DangerSoft}"/>
+</ResourceDictionary>

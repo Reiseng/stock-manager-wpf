@@ -26,8 +26,7 @@ namespace StockControl.Services
         }
         public Checkout GetCheckoutByID(string ID)
         {
-            int id = Convert.ToInt16(ID);
-            if (id <= 0)
+            if (!int.TryParse(ID, out int id) || id <= 0)
                 throw new Exception("Id inválida");
             Checkout checkout = _repository.GetByID(id);
             if (checkout == null)
@@ -100,11 +99,11 @@ namespace StockControl.Services
         {
             if (_currentCheckout.Items.Count == 0)
                 throw new Exception("El carrito está vacío");
-            if (_currentCheckout.operationType == OperationType.CreditNote ||
-                _currentCheckout.operationType == OperationType.DebitNote)
+            var operation = _currentCheckout.operationType;
+            if (operation == OperationType.CreditNote ||
+                operation == OperationType.DebitNote)
             {
-                if (_currentCheckout.RelatedCheckoutId == null)
-                    throw new Exception("Debe vincularse a una factura existente");
+                ValidateRelatedCheckout();
             }
             if (_currentCheckout.invoiceType == InvoiceType.AFacture ||
                 _currentCheckout.invoiceType == InvoiceType.BFacture)
@@ -118,38 +117,55 @@ namespace StockControl.Services
             {
                 _currentCheckout.Client = clientService.GetFinalConsumer();
             }
-            if (_currentCheckout.operationType == OperationType.Sale){
-            foreach (var item in _currentCheckout.Items)
-                {
-                    if (item.product.Stock < item.Quantity)
-                        throw new Exception(
-                            $"Stock insuficiente para {item.product.Name}"
-                        );
-                }
-                foreach (var item in _currentCheckout.Items)
-                {
-                    if (item.product.Unit != UnitType.Service){
-                        productService.DecreaseStock(
-                            item.product.Id,
-                            item.Quantity
-                        );
-                    }
-                }
-            }
-            if (_currentCheckout.operationType == OperationType.CreditNote){
-                foreach (var item in _currentCheckout.Items)
-                {
-                    if (item.product.Unit != UnitType.Service){
-                        productService.IncreaseStock(
-                            item.product.Id,
-                            item.Quantity
-                        );
-                    }
-                }
+            // Stock movements: a sale takes stock out, a credit note puts it back.
+            // Budgets and debit notes don't touch stock. Services never have stock.
+            var stockChanges = new List<StockChange>();
+            if (operation == OperationType.Sale || operation == OperationType.CreditNote)
+            {
+                var sign = operation == OperationType.Sale ? -1 : 1;
+                stockChanges = _currentCheckout.Items
+                    .Where(i => i.product.Unit != UnitType.Service)
+                    .GroupBy(i => i.product.Id)
+                    .Select(g => new StockChange(g.Key, g.First().product.Name, sign * g.Sum(i => i.Quantity)))
+                    .ToList();
             }
             _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total*(1+(i.product.Tax/100)));
-            var lastCheckout = _repository.Add(_currentCheckout);
+            _currentCheckout.Date = DateTime.Now;
+            // Stock check, stock update and invoice insert run in ONE transaction:
+            // either everything is saved or nothing is (also safe with several registers)
+            var lastCheckout = _repository.Add(_currentCheckout, stockChanges);
             return lastCheckout;
+        }
+        private void ValidateRelatedCheckout()
+        {
+            if (_currentCheckout.RelatedCheckoutId == null)
+                throw new Exception("Debe vincularse a una factura existente");
+
+            var related = _repository.GetByID(_currentCheckout.RelatedCheckoutId.Value);
+            if (related == null)
+                throw new Exception("La factura vinculada no existe");
+            if (related.operationType != OperationType.Sale)
+                throw new Exception("Las notas de crédito y débito deben vincularse a una venta");
+
+            if (_currentCheckout.operationType != OperationType.CreditNote)
+                return;
+
+            // A credit note can only return what was sold, minus what was already returned
+            var alreadyCredited = _repository.GetCreditedQuantities(related.ID);
+            foreach (var group in _currentCheckout.Items.GroupBy(i => i.product.Id))
+            {
+                var name = group.First().product.Name;
+                var requested = group.Sum(i => i.Quantity);
+                var sold = related.Items.Where(i => i.product.Id == group.Key).Sum(i => i.Quantity);
+                if (sold == 0)
+                    throw new Exception($"{name} no figura en la factura N° {related.ID}");
+
+                alreadyCredited.TryGetValue(group.Key, out var credited);
+                var available = sold - credited;
+                if (requested > available)
+                    throw new Exception(
+                        $"De {name} solo se pueden devolver {available:0.###} (vendido {sold:0.###}, ya devuelto {credited:0.###})");
+            }
         }
         public Checkout GetCurrentCheckout()
         {
@@ -167,6 +183,8 @@ namespace StockControl.Services
 
             if (quantity <= 0)
                 _currentCheckout.Items.Remove(item);
+            else if (item.product.Unit == UnitType.Unit && quantity % 1 != 0)
+                return; // invalid for products sold by unit: keep the previous quantity
             else
                 item.Quantity = quantity;
         }
@@ -181,9 +199,9 @@ namespace StockControl.Services
 
             if (item == null) return;
 
-            if (price <= 0)
-                throw new Exception("El precio debe ser mayor a 0");
-            else
+            // Called while the grid is being edited: throwing here crashed the app.
+            // An invalid price is ignored and the grid shows the previous one again.
+            if (price > 0)
                 item.UnitPrice = price;
         }
     }
