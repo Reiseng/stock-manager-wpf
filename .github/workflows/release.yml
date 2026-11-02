@@ -1,0 +1,52 @@
+# Publica una versión nueva cuando subís un tag tipo v1.2.0
+#   git tag v1.2.0
+#   git push origin v1.2.0
+# Arma el instalador y lo sube a GitHub Releases. Los programas instalados
+# lo detectan al iniciar y ofrecen actualizar.
+name: Publicar versión
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Leer la versión del tag
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Compilar
+        run: dotnet publish StockControl.csproj -c Release -r win-x64 --self-contained -p:Version=${{ env.VERSION }} -o publish
+
+      - name: Instalar vpk
+        run: dotnet tool install -g vpk --version 1.2.161
+
+      # Trae la versión anterior para generar una actualización parcial (más liviana).
+      # La primera vez no hay nada que traer y está bien.
+      - name: Traer la versión anterior
+        continue-on-error: true
+        run: vpk download github --repoUrl ${{ github.server_url }}/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} -o Releases
+
+      - name: Armar el instalador
+        shell: pwsh
+        run: |
+          $notes = @()
+          if (Test-Path notas-de-version.md) { $notes = @('--releaseNotes', 'notas-de-version.md') }
+          vpk pack --packId StockManager --packVersion $env:VERSION --packDir publish --mainExe StockManager.exe `
+            --packTitle "Stock Manager" --packAuthors "Reiseng Software" -o Releases @notes
+
+      - name: Publicar en GitHub Releases
+        run: vpk upload github --repoUrl ${{ github.server_url }}/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} -o Releases --publish --releaseName "Stock Manager ${{ env.VERSION }}" --tag ${{ github.ref_name }}
