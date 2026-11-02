@@ -19,7 +19,7 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive
+                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive, TaxCondition
                 FROM Clients
                 ";
             if (!includeInactive)
@@ -40,6 +40,7 @@ namespace StockControl.Data
                     reader.GetInt32(7) == 1 ? true : false
                 );
                 client.ID = reader.GetInt32(0);
+                client.TaxCondition = (StockControl.Enums.TaxCondition)reader.GetInt32(8);
                 clients.Add(client);
             }
             return clients;
@@ -51,7 +52,7 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive
+                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive, TaxCondition
                 FROM Clients
                 WHERE Dni = @dni";
             if (!includeInactive)
@@ -73,6 +74,7 @@ namespace StockControl.Data
                     reader.GetInt16(7) == 1 ? true : false
                 );
                 client.ID = reader.GetInt32(0);
+                client.TaxCondition = (StockControl.Enums.TaxCondition)reader.GetInt32(8);
                 return client;
             }
             return null;
@@ -83,7 +85,7 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive
+                SELECT ID, Dni, Name, LastName, Phone, Email, Address, IsActive, TaxCondition
                 FROM Clients
                 WHERE ID = @id
                 ";
@@ -106,6 +108,7 @@ namespace StockControl.Data
                     reader.GetInt32(7) == 1
                 );
                 client.ID = reader.GetInt32(0);
+                client.TaxCondition = (StockControl.Enums.TaxCondition)reader.GetInt32(8);
                 return client;
             }
             return null;
@@ -116,8 +119,8 @@ namespace StockControl.Data
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO Clients (Dni, Name, LastName, Phone, Email, Address, IsActive)
-                VALUES (@dni, @name, @lastName, @phone, @email, @address, @isActive);
+                INSERT INTO Clients (Dni, Name, LastName, Phone, Email, Address, IsActive, TaxCondition)
+                VALUES (@dni, @name, @lastName, @phone, @email, @address, @isActive, @taxCondition);
                 ";
             command.Parameters.AddWithValue("@dni", client.Dni);
             command.Parameters.AddWithValue("@name", client.Name);
@@ -131,6 +134,7 @@ namespace StockControl.Data
             command.Parameters.AddWithValue("@address", 
                 client.Address ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@isActive", client.IsActive ? 1 : 0);
+            command.Parameters.AddWithValue("@taxCondition", (int)client.TaxCondition);
             command.ExecuteNonQuery();
         }
         public void Remove(Client client)
@@ -159,7 +163,8 @@ namespace StockControl.Data
                     Phone = @phone,
                     Email = @email,
                     Address = @address,
-                    IsActive = @isActive
+                    IsActive = @isActive,
+                    TaxCondition = @taxCondition
                 WHERE ID = @id;
                 ";
             command.Parameters.AddWithValue("@dni", _client.Dni);
@@ -169,8 +174,9 @@ namespace StockControl.Data
             command.Parameters.AddWithValue("@email", _client.Email ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@address", _client.Address ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@isActive", _client.IsActive ? 1 : 0);
+            command.Parameters.AddWithValue("@taxCondition", (int)_client.TaxCondition);
             command.Parameters.AddWithValue("@id", _client.ID);
             command.ExecuteNonQuery();
         }
     }
-}
+}

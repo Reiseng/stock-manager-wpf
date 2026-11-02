@@ -99,6 +99,19 @@ namespace StockControl.Services.Database
                     FOREIGN KEY(UserId) REFERENCES Users(Id)
                 );
                 CREATE INDEX IF NOT EXISTS IX_UserSessions_UserId ON UserSessions(UserId);"),
+
+            new(5, "Facturación electrónica (ARCA)", @"
+                ALTER TABLE Checkouts ADD COLUMN FiscalStatus INTEGER NOT NULL DEFAULT 0;
+                ALTER TABLE Checkouts ADD COLUMN FiscalPointOfSale INTEGER;
+                ALTER TABLE Checkouts ADD COLUMN FiscalVoucherType INTEGER;
+                ALTER TABLE Checkouts ADD COLUMN FiscalVoucherNumber INTEGER;
+                ALTER TABLE Checkouts ADD COLUMN Cae TEXT;
+                ALTER TABLE Checkouts ADD COLUMN CaeDueDate TEXT;
+                ALTER TABLE Checkouts ADD COLUMN FiscalMessage TEXT;
+                ALTER TABLE Checkouts ADD COLUMN FiscalProduction INTEGER NOT NULL DEFAULT 0;
+                CREATE INDEX IF NOT EXISTS IX_Checkouts_FiscalStatus ON Checkouts(FiscalStatus);
+                -- Condición frente al IVA del cliente (3 = consumidor final)
+                ALTER TABLE Clients ADD COLUMN TaxCondition INTEGER NOT NULL DEFAULT 3;"),
         };
 
         public static int LatestVersion => Migrations[^1].Version;

@@ -57,7 +57,8 @@ namespace StockControl.Data
         using (var command = connection.CreateCommand())
         {
             command.CommandText = @"
-                SELECT Id, ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId
+                SELECT Id, ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId,
+                       FiscalStatus, FiscalPointOfSale, FiscalVoucherType, FiscalVoucherNumber, Cae, CaeDueDate, FiscalMessage, FiscalProduction
                 FROM Checkouts;
             ";
 
@@ -78,6 +79,7 @@ namespace StockControl.Data
                     reader.IsDBNull(6) ? null : reader.GetInt32(6)
                 );
                 checkout.ID = checkoutId;
+                ReadFiscal(reader, checkout);
                 checkouts.Add(checkout);
             }
 }       return checkouts;
@@ -118,7 +120,8 @@ namespace StockControl.Data
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = @"
-                    SELECT Id, ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId
+                    SELECT Id, ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId,
+                       FiscalStatus, FiscalPointOfSale, FiscalVoucherType, FiscalVoucherNumber, Cae, CaeDueDate, FiscalMessage, FiscalProduction
                     FROM Checkouts WHERE Id = @id;
                 ";
 
@@ -141,11 +144,64 @@ namespace StockControl.Data
                         reader.IsDBNull(6) ? null : reader.GetInt32(6)
                     );
                     checkout.ID = checkoutId;
+                ReadFiscal(reader, checkout);
                     return checkout;
                 }
             }
         return null;
         }
+        private static void ReadFiscal(Microsoft.Data.Sqlite.SqliteDataReader reader, Checkout checkout)
+        {
+            checkout.FiscalStatus = (FiscalStatus)reader.GetInt32(7);
+            checkout.FiscalPointOfSale = reader.IsDBNull(8) ? null : reader.GetInt32(8);
+            checkout.FiscalVoucherType = reader.IsDBNull(9) ? null : reader.GetInt32(9);
+            checkout.FiscalVoucherNumber = reader.IsDBNull(10) ? null : reader.GetInt64(10);
+            checkout.Cae = reader.IsDBNull(11) ? null : reader.GetString(11);
+            checkout.CaeDueDate = reader.IsDBNull(12) ? null : DateTime.Parse(reader.GetString(12), System.Globalization.CultureInfo.InvariantCulture);
+            checkout.FiscalMessage = reader.IsDBNull(13) ? null : reader.GetString(13);
+            checkout.FiscalProduction = reader.GetInt32(14) == 1;
+        }
+
+        // Saves everything about the ARCA side of a sale (status, number, CAE, message)
+        public void UpdateFiscal(Checkout c)
+        {
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE Checkouts
+                SET FiscalStatus = @status, FiscalPointOfSale = @pto, FiscalVoucherType = @type,
+                    FiscalVoucherNumber = @number, Cae = @cae, CaeDueDate = @due, FiscalMessage = @message,
+                    FiscalProduction = @production, InvoiceType = @invoiceType
+                WHERE Id = @id;";
+            command.Parameters.AddWithValue("@status", (int)c.FiscalStatus);
+            command.Parameters.AddWithValue("@pto", (object?)c.FiscalPointOfSale ?? DBNull.Value);
+            command.Parameters.AddWithValue("@type", (object?)c.FiscalVoucherType ?? DBNull.Value);
+            command.Parameters.AddWithValue("@number", (object?)c.FiscalVoucherNumber ?? DBNull.Value);
+            command.Parameters.AddWithValue("@cae", (object?)c.Cae ?? DBNull.Value);
+            command.Parameters.AddWithValue("@due", c.CaeDueDate.HasValue ? c.CaeDueDate.Value.ToString("yyyy-MM-dd") : DBNull.Value);
+            command.Parameters.AddWithValue("@message", (object?)c.FiscalMessage ?? DBNull.Value);
+            command.Parameters.AddWithValue("@production", c.FiscalProduction ? 1 : 0);
+            command.Parameters.AddWithValue("@invoiceType", (int)c.invoiceType);
+            command.Parameters.AddWithValue("@id", c.ID);
+            command.ExecuteNonQuery();
+        }
+
+        // Sales waiting for a CAE (no internet, ARCA down...)
+        public List<int> GetPendingFiscalIds()
+        {
+            var ids = new List<int>();
+            using var connection = db.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT Id FROM Checkouts WHERE FiscalStatus = @pending ORDER BY Id;";
+            command.Parameters.AddWithValue("@pending", (int)FiscalStatus.Pending);
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+                ids.Add(reader.GetInt32(0));
+            return ids;
+        }
+
         // Sum of quantities already returned through credit notes, per product
         public Dictionary<int, decimal> GetCreditedQuantities(int relatedCheckoutId)
         {
@@ -199,8 +255,8 @@ namespace StockControl.Data
 
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO Checkouts (ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId)
-                VALUES (@clientId, @invoiceType, @operationType, @total, @createdAt, @relatedCheckoutId);
+                INSERT INTO Checkouts (ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId, FiscalStatus, FiscalProduction)
+                VALUES (@clientId, @invoiceType, @operationType, @total, @createdAt, @relatedCheckoutId, @fiscalStatus, @fiscalProduction);
                 SELECT last_insert_rowid();
                 ";
             command.Parameters.AddWithValue("@clientId", _checkout.Client?.ID ?? (object)DBNull.Value);
@@ -209,6 +265,8 @@ namespace StockControl.Data
             command.Parameters.AddWithValue("@total", _checkout.Total);
             command.Parameters.AddWithValue("@createdAt", _checkout.Date.ToString("yyyy-MM-dd HH:mm:ss"));
             command.Parameters.AddWithValue("@relatedCheckoutId", _checkout.RelatedCheckoutId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@fiscalStatus", (int)_checkout.FiscalStatus);
+            command.Parameters.AddWithValue("@fiscalProduction", _checkout.FiscalProduction ? 1 : 0);
             var checkoutId = (long)command.ExecuteScalar()!;
 
             foreach (var item in _checkout.Items)
@@ -229,4 +287,4 @@ namespace StockControl.Data
             return _checkout;
         }
     }
-}
+}

@@ -7,6 +7,7 @@ using StockControl.Dtos;
 using StockControl.Enums;
 using StockControl.Models;
 using StockControl.Services;
+using StockControl.Services.Arca;
 using StockControl.ViewModels.Clients;
 using StockControl.ViewModels.Products;
 using StockControl.Views;
@@ -90,6 +91,9 @@ namespace StockControl.ViewModels.Checkouts
                     _checkoutService.SetOperationType(value);
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(RequiresRelatedCheckout));
+                    if (value == OperationType.Budget)
+                        InvoiceInArca = false; // budgets never go to ARCA
+                    OnPropertyChanged(nameof(FiscalPreview));
                 }
             }
         }
@@ -114,6 +118,64 @@ namespace StockControl.ViewModels.Checkouts
             set { _searchMessage = value; OnPropertyChanged(); }
         }
 
+        // ---- ARCA ----
+        public bool ArcaEnabled => AppServices.FiscalService.IsEnabled;
+
+        private bool _invoiceInArca;
+        // "Facturar en ARCA" for this sale (F9). Off by default unless set in Configuración.
+        public bool InvoiceInArca
+        {
+            get => _invoiceInArca;
+            set
+            {
+                _invoiceInArca = value && ArcaEnabled;
+                _checkoutService.SetInvoiceInArca(_invoiceInArca);
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShowInvoiceTypePicker));
+                OnPropertyChanged(nameof(FiscalPreview));
+            }
+        }
+        // The manual "Comprobante" picker only makes sense for internal sales
+        public bool ShowInvoiceTypePicker => !InvoiceInArca;
+
+        // "Se emite Factura B" / reason why it can't be invoiced
+        public string? FiscalPreview
+        {
+            get
+            {
+                if (!InvoiceInArca)
+                    return null;
+                try
+                {
+                    var company = AppServices.CompanyService.GetCompanyInfo();
+                    var client = _checkoutService.GetCurrentCheckout().Client;
+                    var letter = FiscalRules.Letter(company.taxCondition, client?.TaxCondition ?? TaxCondition.FinalConsumer);
+                    var type = FiscalRules.VoucherType(letter, SelectedOperationType);
+                    return $"Se emite {FiscalRules.VoucherTypeName(type)}" + (FiscalService.Config.Production ? "" : " (prueba)");
+                }
+                catch (Exception ex)
+                {
+                    return ex.Message;
+                }
+            }
+        }
+
+        private bool _isBusy;
+        // While asking ARCA for the CAE (confirm is disabled)
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                _isBusy = value;
+                OnPropertyChanged();
+                ConfirmCheckoutCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private void ResetFiscalDefault()
+            => InvoiceInArca = ArcaEnabled && FiscalService.Config.InvoiceByDefault;
+
         // Credit and debit notes must point to an existing sale
         public bool RequiresRelatedCheckout =>
             SelectedOperationType == OperationType.CreditNote || SelectedOperationType == OperationType.DebitNote;
@@ -124,6 +186,7 @@ namespace StockControl.ViewModels.Checkouts
         public RelayCommand RemoveItemCommand { get; }
         public RelayCommand LoggoutCommand { get; }
         public RelayCommand AddSearchResultCommand { get; }
+        public RelayCommand ToggleArcaCommand { get; }
         public RelayCommand ClearSearchResultsCommand { get; }
 
         public decimal Total => Checkout?.Total ?? 0;
@@ -146,9 +209,15 @@ namespace StockControl.ViewModels.Checkouts
             InvoiceTypes = Enum.GetValues(typeof(InvoiceType));
             OperationTypes = Enum.GetValues(typeof(OperationType));
             ConfirmCheckoutCommand = new RelayCommand(
-                _ => ConfirmCheckout(),
-                _ => Checkout.Items.Any()
+                async _ => await ConfirmCheckoutAsync(),
+                _ => Checkout.Items.Any() && !IsBusy
             );
+            ToggleArcaCommand = new RelayCommand(_ =>
+            {
+                if (ArcaEnabled && SelectedOperationType != OperationType.Budget)
+                    InvoiceInArca = !InvoiceInArca;
+            });
+            ResetFiscalDefault();
             CancelCommand = new RelayCommand(
                 _=>ClearCheckout()
             );
@@ -227,8 +296,10 @@ namespace StockControl.ViewModels.Checkouts
             ConfirmCheckoutCommand.RaiseCanExecuteChanged();
             HighlightedItem = Checkout.Items.FirstOrDefault(i => i.ProductId == _lastProductId);
         }
-        private void ConfirmCheckout()
+        private async Task ConfirmCheckoutAsync()
         {
+            if (IsBusy)
+                return;
             try
             {
 
@@ -244,12 +315,34 @@ namespace StockControl.ViewModels.Checkouts
                     _checkoutService.SetClient(AppServices.ClientService.GetFinalConsumer());
                 }
                 lastCheckout = _checkoutService.ConfirmCheckout();
-                OpenActions();
+
+                // The sale is saved: start the next cart right away, so anything scanned
+                // while ARCA answers goes to the new sale
                 _checkoutService.StartCheckout();
                 Checkout = CheckoutDto.FromModel(_checkoutService.GetCurrentCheckout());
                 LoadCheckout();
+                ResetFiscalDefault();
                 OnPropertyChanged(nameof(ClientFullName));
                 OnPropertyChanged(nameof(ClientDocument));
+
+                // Now the CAE (if it fails it stays pending and is retried, never lost)
+                if (lastCheckout.FiscalStatus == FiscalStatus.Pending)
+                {
+                    IsBusy = true;
+                    SearchMessage = null;
+                    try
+                    {
+                        lastCheckout = await AppServices.FiscalService.AuthorizeAsync(lastCheckout.ID);
+                        if (lastCheckout.FiscalStatus == FiscalStatus.Authorized)
+                            _ = AppServices.FiscalService.RetryPendingAsync(); // flush older pending ones
+                    }
+                    finally
+                    {
+                        IsBusy = false;
+                    }
+                }
+
+                OpenActions();
             }
             catch (Exception ex)
             {
@@ -292,6 +385,7 @@ namespace StockControl.ViewModels.Checkouts
                 // Keep the service in sync too: before, scanning a barcode afterwards
                 // rebuilt the cart from the service and the client went back to "Consumidor Final"
                 _checkoutService.SetClient(selectedClient);
+                OnPropertyChanged(nameof(FiscalPreview));
             }
                 OnPropertyChanged(nameof(Checkout));
                 OnPropertyChanged(nameof(ClientFullName));
@@ -514,16 +608,7 @@ namespace StockControl.ViewModels.Checkouts
         }
         public void OpenActions()
         {
-            InvoiceDto invoice = new InvoiceDto(
-                lastCheckout.ID.ToString(),
-                lastCheckout.Date,
-                lastCheckout.invoiceType,
-                lastCheckout.operationType,
-                _company!,
-                Checkout.Client!,
-                Checkout.Items.ToList(),
-                Total
-            );
+            var invoice = InvoiceDto.From(lastCheckout, AppServices.CompanyService.GetCompanyInfo());
             var vm = new PrintActionViewModel(invoice);
             var view = new PrintActionWindow
             {
@@ -549,6 +634,7 @@ namespace StockControl.ViewModels.Checkouts
         {
             _checkoutService.ClearCheckout();
             LoadCheckout();
+            ResetFiscalDefault();
         }
 
     }

@@ -1,6 +1,7 @@
 using StockControl.Data;
 using StockControl.Models;
 using StockControl.Enums;
+using StockControl.Services.Arca;
 
 namespace StockControl.Services
 {
@@ -95,6 +96,11 @@ namespace StockControl.Services
         {
             _currentCheckout.operationType = type;
         }
+        // true = request a CAE when confirming ("Facturar en ARCA")
+        public void SetInvoiceInArca(bool value)
+        {
+            _currentCheckout.FiscalStatus = value ? FiscalStatus.Pending : FiscalStatus.Internal;
+        }
         public Checkout ConfirmCheckout()
         {
             if (_currentCheckout.Items.Count == 0)
@@ -117,6 +123,15 @@ namespace StockControl.Services
             {
                 _currentCheckout.Client = clientService.GetFinalConsumer();
             }
+            // "Facturar en ARCA": check everything BEFORE saving (clear message instead of
+            // a sale saved that can't be invoiced). The CAE is requested after saving.
+            if (_currentCheckout.FiscalStatus == FiscalStatus.Pending)
+            {
+                var (letter, _) = AppServices.FiscalService.Prepare(_currentCheckout);
+                _currentCheckout.invoiceType = FiscalRules.InvoiceTypeFor(letter);
+                _currentCheckout.FiscalProduction = FiscalService.Config.Production;
+            }
+
             // Stock movements: a sale takes stock out, a credit note puts it back.
             // Budgets and debit notes don't touch stock. Services never have stock.
             var stockChanges = new List<StockChange>();
@@ -129,7 +144,8 @@ namespace StockControl.Services
                     .Select(g => new StockChange(g.Key, g.First().product.Name, sign * g.Sum(i => i.Quantity)))
                     .ToList();
             }
-            _currentCheckout.Total = _currentCheckout.Items.Sum(i => i.Total*(1+(i.product.Tax/100)));
+            // Same rounding as ARCA (per VAT rate, 2 decimals): receipt, history and ARCA match
+            _currentCheckout.Total = FiscalRules.SaleTotal(_currentCheckout.Items);
             _currentCheckout.Date = DateTime.Now;
             // Stock check, stock update and invoice insert run in ONE transaction:
             // either everything is saved or nothing is (also safe with several registers)
@@ -205,4 +221,4 @@ namespace StockControl.Services
                 item.UnitPrice = price;
         }
     }
-}
+}

@@ -25,10 +25,14 @@
                 <ColumnDefinition Width="*" MaxWidth="440"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBox Style="{StaticResource SearchBox}" Tag="Buscar por número o cliente"
+            <TextBox Style="{StaticResource SearchBox}" Tag="Buscar por número, cliente o factura"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                      Loaded="SearchBox_Loaded"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Tag="&#xE8D4;" Content="Facturar en ARCA" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding SendToArcaCommand}" Margin="10,0,0,0"
+                        ToolTip="Pide el CAE para una venta interna, pendiente o rechazada"
+                        Visibility="{Binding ArcaEnabled, Converter={StaticResource BoolToVisibility}}"/>
                 <Button Style="{StaticResource Button.Primary}" Tag="&#xE8A5;" Content="Ver detalle" ContentTemplate="{StaticResource IconText}"
                         Command="{Binding DetailCommand}" Margin="10,0,0,0"/>
             </StackPanel>
@@ -47,7 +51,26 @@
                         <DataGridTextColumn Header="N°" Binding="{Binding ID}" Width="80" ElementStyle="{StaticResource Cell.Muted}"/>
                         <DataGridTextColumn Header="Fecha" Binding="{Binding Date, StringFormat={}{0:dd/MM/yyyy HH:mm}}" Width="150"/>
                         <DataGridTextColumn Header="Operación" Binding="{Binding operationType, Converter={StaticResource EnumDescriptionConverter}}" Width="*"/>
-                        <DataGridTextColumn Header="Comprobante" Binding="{Binding invoiceType, Converter={StaticResource EnumDescriptionConverter}}" Width="*"/>
+                        <DataGridTextColumn Header="ARCA" Binding="{Binding FiscalSummary}" Width="1.6*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="ToolTip" Value="{Binding FiscalMessage}"/>
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FiscalStatus}" Value="Internal">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FiscalStatus}" Value="Pending">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Danger}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FiscalStatus}" Value="Rejected">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Danger}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                         <DataGridTextColumn Header="Cliente" Binding="{Binding Client}" Width="1.5*"/>
                         <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat={}{0:C2}}" Width="140" ElementStyle="{StaticResource Cell.Strong}" HeaderStyle="{StaticResource Header.Right}"/>
                     </DataGrid.Columns>

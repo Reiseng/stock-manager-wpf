@@ -20,4 +20,5 @@ public static class AppServices
     public static CompanyService CompanyService { get; set; }
     public static BackupService BackupService { get; set; }
     public static UpdateService UpdateService { get; set; }
+    public static StockControl.Services.Arca.FiscalService FiscalService { get; set; }
 }

@@ -53,6 +53,7 @@
                         <DataGridTextColumn Header="DNI / CUIL" Binding="{Binding Dni}" Width="130" ElementStyle="{StaticResource Cell.Muted}"/>
                         <DataGridTextColumn Header="Apellido" Binding="{Binding LastName}" Width="*"/>
                         <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Condición IVA" Binding="{Binding TaxCondition, Converter={StaticResource EnumDescriptionConverter}}" Width="160"/>
                         <DataGridTextColumn Header="Teléfono" Binding="{Binding Phone}" Width="140"/>
                         <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="1.4*"/>
                         <DataGridTextColumn Header="Dirección" Binding="{Binding Address}" Width="1.4*"/>

@@ -32,6 +32,17 @@ namespace StockControl.ViewModels.Clients
             IsEditMode = false;
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
+            TaxConditions = Enum.GetValues(typeof(StockControl.Enums.TaxCondition));
+            SelectedTaxCondition = StockControl.Enums.TaxCondition.FinalConsumer;
+        }
+
+        // Condición frente al IVA: decides Factura A or B and is sent to ARCA
+        public Array TaxConditions { get; }
+        private StockControl.Enums.TaxCondition _selectedTaxCondition;
+        public StockControl.Enums.TaxCondition SelectedTaxCondition
+        {
+            get => _selectedTaxCondition;
+            set { _selectedTaxCondition = value; OnPropertyChanged(); }
         }
         // EDITAR
         public AddClientViewModel(ClientService ClientService, ClientDto Client)
@@ -45,6 +56,7 @@ namespace StockControl.ViewModels.Clients
             Address = Client.Address;
             Phone = Client.Phone;
             Email = Client.Email;
+            SelectedTaxCondition = Client.TaxCondition;
         }
         private string _dni;
         public string Dni
@@ -110,6 +122,7 @@ private void Save()
         clientDto.Phone = Phone;
         clientDto.Address = Address;
         clientDto.Email = Email;
+        clientDto.TaxCondition = SelectedTaxCondition;
         if (IsEditMode)
         {
             _ClientService.UpdateClient(clientDto);

@@ -9,6 +9,8 @@ namespace StockControl.Models
     public string Email { get; set; }
     public string Address { get; set; }
     public bool IsActive { get; set; }
+    // Condición frente al IVA (ARCA needs it on every invoice)
+    public StockControl.Enums.TaxCondition TaxCondition { get; set; } = StockControl.Enums.TaxCondition.FinalConsumer;
 
     public override string ToString()
         => $"{Name} {LastName}";
@@ -25,4 +27,4 @@ namespace StockControl.Models
         }
         public Client(){}
 }
-}
+}

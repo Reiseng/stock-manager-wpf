@@ -25,8 +25,20 @@ namespace StockControl.ViewModels.Checkouts
         protected void OnPropertyChanged(string propertyName)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        public CheckoutDetailViewModel(CheckoutService CheckoutService, CheckoutDto Checkout)
+        private readonly StockControl.Models.Checkout _model;
+
+        // ---- ARCA ----
+        public string FiscalSummary => _model.FiscalSummary;
+        public string? FiscalDetail => _model.FiscalStatus switch
         {
+            Enums.FiscalStatus.Authorized => $"CAE {_model.Cae}, vence el {_model.CaeDueDate:dd/MM/yyyy}",
+            Enums.FiscalStatus.Internal => "No se informó a ARCA (no válido como factura)",
+            _ => _model.FiscalMessage
+        };
+
+        public CheckoutDetailViewModel(CheckoutService CheckoutService, CheckoutDto Checkout, StockControl.Models.Checkout model)
+        {
+            _model = model;
             var companyService = AppServices.CompanyService;
             company = companyService.GetCompanyInfo();
             _checkoutService = CheckoutService;
@@ -35,7 +47,7 @@ namespace StockControl.ViewModels.Checkouts
             ClientDto = Checkout.Client;
             Items = Checkout.Items;
             Date = Checkout.Date;
-            Total = Checkout.Total;
+            Total = model.Total;
             PrintPDFCommand = new RelayCommand(_ => GenerateInvoicePDF());
         }
         private int _id;
@@ -76,19 +88,10 @@ namespace StockControl.ViewModels.Checkouts
         }
         private void GenerateInvoicePDF()
         {
-            InvoiceDto invoice = new InvoiceDto(
-                ID.ToString(),
-                Date,
-                _checkoutDto.InvoiceType,
-                _checkoutDto.OperationType,
-                company!,
-                ClientDto!,
-                Items.ToList(),
-                Total
-            );
+            var invoice = InvoiceDto.From(_model, company!);
             var invoiceService = new InvoiceDocumentService(invoice);
             invoiceService.GeneratePdfAndShow(
-                $"Factura_{invoice.invoiceNumber}_{invoice.client.Name}{invoice.client.LastName}_{DateTime.Now:yyyyMMdd}"
+                $"{invoice.VoucherTitle}_{invoice.FormattedNumber}_{invoice.client.Name}{invoice.client.LastName}"
             );
             CloseAction?.Invoke(false);
         }

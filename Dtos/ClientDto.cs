@@ -11,6 +11,7 @@ namespace StockControl.Dtos
         public string? Phone { get; set; }
         public string? Email { get; set; }
         public string? Address { get; set; }
+        public StockControl.Enums.TaxCondition TaxCondition { get; set; } = StockControl.Enums.TaxCondition.FinalConsumer;
         public ClientDto(int id, string dni, string name, string lastName, string email, string phone, string address){
             ID = id;
             Dni = dni;
@@ -31,8 +32,9 @@ namespace StockControl.Dtos
                 Dni = client.Dni,
                 Email = client.Email,
                 Phone = client.Phone,
-                Address = client.Address
+                Address = client.Address,
+                TaxCondition = client.TaxCondition
             };
         }
     }
-}
+}

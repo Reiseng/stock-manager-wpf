@@ -54,13 +54,18 @@ public static class ConfigService
     public static void SaveTheme(string themeId)
     {
         Config.Theme = themeId;
+        Save();
+    }
+
+    public static void Save()
+    {
         try
         {
             File.WriteAllText(ConfigPath, JsonSerializer.Serialize(Config, new JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception)
         {
-            // Not being able to remember the theme is not a reason to fail
+            // Not being able to save a preference is not a reason to fail
         }
     }
 
@@ -98,4 +103,16 @@ public class AppConfig
     public string? DatabasePath { get; set; }
     // Color theme chosen in Configuración (see ThemeService). Saved per PC.
     public string? Theme { get; set; }
+    // Electronic invoicing. Per PC: each register can have its own point of sale.
+    public ArcaConfig Arca { get; set; } = new();
+}
+
+public class ArcaConfig
+{
+    public bool Enabled { get; set; }
+    // false = homologación (ARCA test environment, nothing is real)
+    public bool Production { get; set; }
+    public int PointOfSale { get; set; } = 1;
+    // Whether "Facturar en ARCA" comes checked in new sales
+    public bool InvoiceByDefault { get; set; }
 }

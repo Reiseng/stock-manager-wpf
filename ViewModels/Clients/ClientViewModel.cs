@@ -97,7 +97,10 @@ namespace StockControl.ViewModels.Clients
 
         private void EditClient(Client _Client)
         {
-            ClientDto _clientdto = new ClientDto(_Client.ID,_Client.Dni, _Client.Name, _Client.LastName, _Client.Email, _Client.Phone, _Client.Address);
+            ClientDto _clientdto = new ClientDto(_Client.ID,_Client.Dni, _Client.Name, _Client.LastName, _Client.Email, _Client.Phone, _Client.Address)
+            {
+                TaxCondition = _Client.TaxCondition
+            };
             var vm = new AddClientViewModel(_ClientService, _clientdto);
             var view = new AddClientWindow
             {

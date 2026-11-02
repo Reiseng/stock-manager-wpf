@@ -65,6 +65,7 @@ namespace StockControl.Services{
                 existing.Phone = clientDto.Phone;
                 existing.Email = clientDto.Email;
                 existing.Address = clientDto.Address;
+                existing.TaxCondition = clientDto.TaxCondition;
                 existing.IsActive = true;
 
                 _repository.Update(existing);
@@ -80,6 +81,7 @@ namespace StockControl.Services{
                     clientDto.Address,
                     true
                 );
+                client.TaxCondition = clientDto.TaxCondition;
 
                 _repository.Add(client);
             }
@@ -128,6 +130,8 @@ namespace StockControl.Services{
             if (_client.Address != null)
                 client.Address = _client.Address;
 
+            client.TaxCondition = _client.TaxCondition;
+
             _repository.Update(client);
         }
         public Client GetFinalConsumer()
@@ -150,4 +154,4 @@ namespace StockControl.Services{
         }
     }
 
-}
+}

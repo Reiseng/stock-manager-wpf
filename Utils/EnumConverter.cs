@@ -22,19 +22,4 @@ public class EnumDescriptionConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
-
-public static class EnumExtensions
-{
-    public static string GetDescription(this Enum value)
-    {
-        if (value == null)
-            return string.Empty;
-
-        var field = value.GetType().GetField(value.ToString());
-        var attribute = field?.GetCustomAttribute<DescriptionAttribute>();
-
-        return attribute?.Description ?? value.ToString();
-    }
-}
-
 }

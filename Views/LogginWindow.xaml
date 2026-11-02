@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:StockControl.ViewModels"
         xmlns:services="clr-namespace:StockControl.Services"
+        xmlns:windows="clr-namespace:StockControl.Views.Windows"
         Style="{StaticResource AppWindow}"
         Title="Stock Manager"
         Width="860" Height="520"
@@ -31,8 +32,12 @@
                                Foreground="{DynamicResource Brush.SidebarText}" FontSize="15" TextWrapping="Wrap"
                                LineHeight="22"/>
                 </StackPanel>
-                <TextBlock Text="{x:Static services:UpdateService.CurrentVersionText}" VerticalAlignment="Bottom"
-                           Foreground="{DynamicResource Brush.SidebarText}" FontSize="12" Opacity="0.7"/>
+                <StackPanel VerticalAlignment="Bottom" Orientation="Horizontal">
+                    <Button Style="{StaticResource NavAction}" Tag="&#xE897;" Content="Soporte" Margin="-14,0,0,0"
+                            Width="130" Command="{x:Static windows:SupportWindow.OpenCommand}"/>
+                    <TextBlock Text="{x:Static services:UpdateService.CurrentVersionText}" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Brush.SidebarText}" FontSize="12" Opacity="0.7" Margin="8,0,0,0"/>
+                </StackPanel>
             </Grid>
         </Border>
 

@@ -37,9 +37,56 @@ namespace StockControl.ViewModels.Checkouts
                 OnPropertyChanged();
 
                 DetailCommand.RaiseCanExecuteChanged();
+                SendToArcaCommand.RaiseCanExecuteChanged();
             }
         }
         public RelayCommand DetailCommand { get; }
+
+        // ---- ARCA ----
+        public bool ArcaEnabled => AppServices.FiscalService.IsEnabled;
+        public RelayCommand SendToArcaCommand { get; }
+
+        private bool _isSending;
+        public bool IsSending
+        {
+            get => _isSending;
+            set { _isSending = value; OnPropertyChanged(); SendToArcaCommand.RaiseCanExecuteChanged(); }
+        }
+
+        // Internal, pending or rejected sale -> ask for the CAE now
+        private async Task SendToArcaAsync(Checkout checkout)
+        {
+            var name = checkout.operationType == Enums.OperationType.Sale ? "la venta" : "el comprobante";
+            if (MessageBox.Show(
+                    $"¿Facturar en ARCA {name} N° {checkout.ID} por {checkout.Total:C2}?\n\n" +
+                    "Se pide el CAE con la fecha de hoy.",
+                    "Facturar en ARCA", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            IsSending = true;
+            try
+            {
+                var result = await AppServices.FiscalService.SendAsync(checkout.ID);
+                var message = result.FiscalStatus switch
+                {
+                    Enums.FiscalStatus.Authorized => $"{result.FiscalSummary}\nCAE {result.Cae}, vence el {result.CaeDueDate:dd/MM/yyyy}.",
+                    Enums.FiscalStatus.Rejected => $"ARCA rechazó el comprobante:\n{result.FiscalMessage}",
+                    _ => $"Quedó pendiente:\n{result.FiscalMessage}"
+                };
+                MessageBox.Show(message, "Facturar en ARCA", MessageBoxButton.OK,
+                    result.FiscalStatus == Enums.FiscalStatus.Authorized ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Facturar en ARCA", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                IsSending = false;
+                LoadCheckouts();
+                _checkoutView.Refresh();
+            }
+        }
 
         public CheckoutsHistoryViewModel(CheckoutService checkoutService)
         {
@@ -53,6 +100,11 @@ namespace StockControl.ViewModels.Checkouts
             DetailCommand = new RelayCommand(
                 _ => OpenCheckoutDetail(SelectedCheckout),
                 _ => SelectedCheckout!= null);
+            SendToArcaCommand = new RelayCommand(
+                async _ => await SendToArcaAsync(SelectedCheckout!),
+                _ => ArcaEnabled && !IsSending && SelectedCheckout != null
+                     && SelectedCheckout.FiscalStatus != Enums.FiscalStatus.Authorized
+                     && SelectedCheckout.operationType != Enums.OperationType.Budget);
         }
         private void LoadCheckouts()
         {
@@ -69,7 +121,8 @@ namespace StockControl.ViewModels.Checkouts
             if (string.IsNullOrWhiteSpace(SearchText))
                 return true;
 
-            return Checkout.Client.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase) 
+            return Checkout.FiscalSummary.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+                || Checkout.Client.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase) 
                 || Checkout.Client.LastName.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
                 || Checkout.ID.ToString().Contains(SearchText, StringComparison.OrdinalIgnoreCase);
         }
@@ -82,7 +135,7 @@ namespace StockControl.ViewModels.Checkouts
         private void OpenCheckoutDetail(Checkout _checkout)
         {
             CheckoutDto checkoutDto = CheckoutDto.FromModel(_checkout);
-            var vm = new CheckoutDetailViewModel(_checkoutService, checkoutDto);
+            var vm = new CheckoutDetailViewModel(_checkoutService, checkoutDto, _checkout);
             var view = new CheckoutDetailWindow
             {
                 DataContext = vm,
@@ -96,4 +149,4 @@ namespace StockControl.ViewModels.Checkouts
             _checkoutView.Refresh();
         }
     }
-}
+}

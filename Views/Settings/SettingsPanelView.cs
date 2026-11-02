@@ -8,5 +8,11 @@ namespace StockControl.Views.Settings
         {
             InitializeComponent();
         }
+        // PasswordBox.Password can't be data-bound
+        private void PfxPassword_PasswordChanged(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DataContext is StockControl.ViewModels.Settings.SettingsViewModel vm)
+                vm.PfxPassword = ((System.Windows.Controls.PasswordBox)sender).Password;
+        }
     }
-}
+}

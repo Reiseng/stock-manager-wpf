@@ -6,6 +6,7 @@ using System.Windows;
 using StockControl.Enums;
 using StockControl.Views.Windows;
 using StockControl.Services.Database;
+using StockControl.Services.Arca;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
@@ -45,9 +46,182 @@ namespace StockControl.ViewModels.Settings
             SaveCommand = new RelayCommand(_ => Save(), _ => CanSave());
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
 
+            GenerateRequestCommand = new RelayCommand(_ => GenerateRequest());
+            ImportCertificateCommand = new RelayCommand(_ => ImportCertificate());
+            TestConnectionCommand = new RelayCommand(async _ => await TestConnectionAsync(), _ => !IsTesting);
+            OpenArcaGuideCommand = new RelayCommand(_ => OpenUrl("https://github.com/Reiseng/stock-manager-wpf/blob/main/ARCA.md"));
+
             ExportDatabaseCommand = new RelayCommand(_ => ExportDatabase());
             ImportDatabaseCommand = new RelayCommand(_ => ImportDatabase());
             OpenBackupFolderCommand = new RelayCommand(_ => OpenBackupFolder());
+        }
+
+        // ---- Facturación electrónica (ARCA) ----
+        private static ArcaConfig Arca => ConfigService.Config.Arca;
+
+        public bool ArcaEnabled
+        {
+            get => Arca.Enabled;
+            set { Arca.Enabled = value; ConfigService.Save(); OnPropertyChanged(); }
+        }
+        public bool ArcaProduction
+        {
+            get => Arca.Production;
+            set
+            {
+                if (value && !Arca.Production && MessageBox.Show(
+                        "En producción las facturas son REALES y se informan a ARCA.\n\n¿Pasar a producción?",
+                        "Facturación electrónica", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                {
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ArcaHomologation));
+                    return;
+                }
+                Arca.Production = value;
+                ConfigService.Save();
+                ConnectionResult = null;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ArcaHomologation));
+                OnPropertyChanged(nameof(CertificateStatus));
+            }
+        }
+        public bool ArcaHomologation
+        {
+            get => !Arca.Production;
+            set { if (value) ArcaProduction = false; }
+        }
+        public string PointOfSaleText
+        {
+            get => Arca.PointOfSale.ToString();
+            set
+            {
+                if (int.TryParse(value, out var n) && n > 0 && n < 100000)
+                {
+                    Arca.PointOfSale = n;
+                    ConfigService.Save();
+                }
+                OnPropertyChanged();
+            }
+        }
+        public bool InvoiceByDefault
+        {
+            get => Arca.InvoiceByDefault;
+            set { Arca.InvoiceByDefault = value; ConfigService.Save(); OnPropertyChanged(); }
+        }
+
+        // Name of the certificate in ARCA ("alias")
+        public string CertificateAlias { get; set; } = "stockmanager";
+        // Only for importing a .pfx (set from the PasswordBox)
+        public string? PfxPassword { get; set; }
+
+        public string CertificateStatus
+        {
+            get
+            {
+                var store = AppServices.FiscalService.Certificates;
+                var info = store.Info;
+                var env = Arca.Production ? "producción" : "homologación";
+                if (info != null)
+                    return info.Expired
+                        ? $"El certificado de {env} venció el {info.ValidUntil:dd/MM/yyyy}. Generá uno nuevo."
+                        : $"Certificado de {env} cargado. Vence el {info.ValidUntil:dd/MM/yyyy}.";
+                return store.HasPendingRequest
+                    ? $"Pedido de {env} generado. Falta importar el certificado (.crt) que te da ARCA."
+                    : $"Todavía no hay certificado de {env}.";
+            }
+        }
+
+        private string? _connectionResult;
+        public string? ConnectionResult
+        {
+            get => _connectionResult;
+            set { _connectionResult = value; OnPropertyChanged(); }
+        }
+        private bool _isTesting;
+        public bool IsTesting
+        {
+            get => _isTesting;
+            set { _isTesting = value; OnPropertyChanged(); TestConnectionCommand.RaiseCanExecuteChanged(); }
+        }
+
+        public RelayCommand GenerateRequestCommand { get; }
+        public RelayCommand ImportCertificateCommand { get; }
+        public RelayCommand TestConnectionCommand { get; }
+        public RelayCommand OpenArcaGuideCommand { get; }
+
+        // Step 1: key + request (.csr) to upload to ARCA. No OpenSSL needed.
+        private void GenerateRequest()
+        {
+            try
+            {
+                var csr = AppServices.FiscalService.Certificates.CreateRequest(CUIT ?? "", Name ?? "", CertificateAlias);
+                var dialog = new SaveFileDialog
+                {
+                    Title = "Guardar pedido de certificado",
+                    FileName = $"{CertificateAlias}.csr",
+                    DefaultExt = ".csr",
+                    Filter = "Pedido de certificado (*.csr)|*.csr"
+                };
+                if (dialog.ShowDialog() != true)
+                    return;
+                File.WriteAllText(dialog.FileName, csr);
+                OnPropertyChanged(nameof(CertificateStatus));
+                MessageBox.Show($"Pedido guardado en:\n{dialog.FileName}\n\nAhora subilo a ARCA con el alias \"{CertificateAlias}\" " +
+                                "y descargá el certificado (.crt). Después usá \"Importar certificado\".",
+                    "Facturación electrónica", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Facturación electrónica", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        // Step 2: the .crt from ARCA (pairs with the key of step 1) or an existing .pfx
+        private void ImportCertificate()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Importar certificado de ARCA",
+                Filter = "Certificado (*.crt;*.pem;*.cer;*.pfx;*.p12)|*.crt;*.pem;*.cer;*.pfx;*.p12|Todos los archivos (*.*)|*.*"
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+            try
+            {
+                var info = AppServices.FiscalService.Certificates.ImportCertificate(dialog.FileName, PfxPassword);
+                OnPropertyChanged(nameof(CertificateStatus));
+                MessageBox.Show($"Certificado cargado.\n{info.Subject}\nVence el {info.ValidUntil:dd/MM/yyyy}.\n\nProbá la conexión.",
+                    "Facturación electrónica", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudo importar: {ex.Message}", "Facturación electrónica", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private async Task TestConnectionAsync()
+        {
+            IsTesting = true;
+            ConnectionResult = "Probando...";
+            try
+            {
+                ConnectionResult = await AppServices.FiscalService.TestConnectionAsync();
+            }
+            catch (Exception ex)
+            {
+                ConnectionResult = "Falló: " + ex.Message;
+                StockControl.Utils.ErrorLog.Write("Probar conexión ARCA", ex);
+            }
+            finally
+            {
+                IsTesting = false;
+            }
+        }
+
+        private static void OpenUrl(string url)
+        {
+            try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch (Exception) { }
         }
 
         // ---- Apariencia ----

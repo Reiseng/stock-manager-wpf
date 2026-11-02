@@ -78,6 +78,8 @@ public partial class App : Application
                     AppServices.ProductService);
             AppServices.CheckoutService =
                 new CheckoutService(AppServices.CheckoutPersistence);
+            AppServices.FiscalService =
+                new Services.Arca.FiscalService(AppServices.CheckoutPersistence, AppServices.CompanyService);
         }
         catch (Exception ex)
         {
@@ -117,6 +119,9 @@ public partial class App : Application
         // without internet nothing happens
         AppServices.UpdateService = new UpdateService();
         _ = OfferUpdateIfAvailableAsync();
+
+        // Sales that were left waiting for a CAE (no internet last time): try again
+        _ = RetryPendingInvoicesAsync();
     }
 
     private async Task OfferUpdateIfAvailableAsync()
@@ -141,6 +146,19 @@ public partial class App : Application
         {
             // An update problem must never get in the way of selling
             ErrorLog.Write("Aviso de actualización", ex);
+        }
+    }
+
+    private static async Task RetryPendingInvoicesAsync()
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            await AppServices.FiscalService.RetryPendingAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorLog.Write("Reintentar comprobantes pendientes", ex);
         }
     }
 

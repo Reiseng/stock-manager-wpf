@@ -18,6 +18,15 @@
             <TextBlock Text="{Binding Date, StringFormat={}{0:dddd dd/MM/yyyy, HH:mm}}" Style="{StaticResource Subtle}" Margin="0,4,0,0"/>
         </StackPanel>
 
+        <!-- ARCA status -->
+        <Border Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                CornerRadius="6" Padding="12,6" Background="{DynamicResource Brush.PrimarySoft}">
+            <StackPanel>
+                <TextBlock Text="{Binding FiscalSummary}" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding FiscalDetail}" Style="{StaticResource Subtle}" FontSize="12" MaxWidth="320"/>
+            </StackPanel>
+        </Border>
+
         <!-- Client -->
         <Border Grid.Row="1" Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="8" Padding="16,12" Margin="0,18,0,16">
             <StackPanel Orientation="Horizontal">

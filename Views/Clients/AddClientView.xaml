@@ -19,10 +19,28 @@
                 <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"/>
             </StackPanel>
         </Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
         <StackPanel>
-            <TextBlock Text="DNI o CUIL *" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Text="DNI, CUIL o CUIT *" Style="{StaticResource FieldLabel}"/>
             <TextBox Text="{Binding Dni, UpdateSourceTrigger=PropertyChanged}" Tag="Solo números, sin puntos ni guiones"/>
         </StackPanel>
+        <StackPanel Grid.Column="2">
+            <TextBlock Text="Condición frente al IVA" Style="{StaticResource FieldLabel}"/>
+            <ComboBox ItemsSource="{Binding TaxConditions}" SelectedItem="{Binding SelectedTaxCondition}"
+                      ToolTip="Para Factura A el cliente tiene que ser Responsable Inscripto o Monotributista y tener CUIT">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </StackPanel>
+        </Grid>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

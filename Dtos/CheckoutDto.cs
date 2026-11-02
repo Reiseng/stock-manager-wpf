@@ -37,7 +37,8 @@ public class CheckoutDto : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public decimal Total => Items.Sum(i => i.Total);
+        // Same rounding as ARCA: per VAT rate, 2 decimals
+        public decimal Total => Services.Arca.FiscalRules.Amounts(Items.Select(i => (i.Quantity, i.UnitPrice, i.Tax)), '-').Total;
     public static CheckoutDto FromModel(Checkout checkout)
     {
         return new CheckoutDto
@@ -64,4 +65,4 @@ public class CheckoutDto : INotifyPropertyChanged
         };
     }
 }
-}
+}
