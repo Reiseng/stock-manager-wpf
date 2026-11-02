@@ -7,6 +7,7 @@ using StockControl.Data;
 using StockControl.Models;
 using StockControl.Services;
 using StockControl.Services.Database;
+using StockControl.Utils;
 
 namespace StockControl;
 
@@ -16,6 +17,16 @@ public partial class App : Application
     {
         QuestPDF.Settings.License = LicenseType.Community; //QuestPDF License
         base.OnStartup(e);
+
+        // Any unexpected error in a screen: log it and keep the program open
+        DispatcherUnhandledException += (_, args) =>
+        {
+            ErrorLog.Write("Error no controlado", args.Exception);
+            MessageBox.Show(
+                $"Ocurrió un error inesperado:\n\n{args.Exception.Message}\n\nEl detalle quedó guardado en {ErrorLog.FilePath}",
+                "Stock Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
+            args.Handled = true;
+        };
 
         try
         {
@@ -70,6 +81,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            ErrorLog.Write("Inicio del programa", ex);
             MessageBox.Show(
                 $"No se pudo iniciar el programa:\n\n{ex.Message}",
                 "Stock Manager",
@@ -114,17 +126,21 @@ public partial class App : Application
             var update = await AppServices.UpdateService.CheckAsync();
             if (update == null)
                 return;
+            ErrorLog.Note($"Actualización disponible: {update.TargetFullRelease.Version}");
 
             var vm = new ViewModels.UpdatePromptViewModel(AppServices.UpdateService, update);
             var window = new Views.Windows.UpdateWindow { DataContext = vm };
             if (MainWindow != null && MainWindow.IsVisible)
                 window.Owner = MainWindow;
             vm.Close = () => window.Close();
+            ErrorLog.Note("Mostrando el aviso de actualización");
             window.ShowDialog();
+            ErrorLog.Note("Aviso de actualización cerrado");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // An update problem must never get in the way of selling
+            ErrorLog.Write("Aviso de actualización", ex);
         }
     }
 

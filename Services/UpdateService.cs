@@ -53,9 +53,11 @@ namespace StockControl.Services
                 var finished = await Task.WhenAny(check, Task.Delay(CheckTimeout));
                 return finished == check ? await check : null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return null; // offline, GitHub down, rate limit...
+                // offline, GitHub down, rate limit... (logged, never shown)
+                Utils.ErrorLog.Write("Buscar actualizaciones", ex);
+                return null;
             }
         }
 
