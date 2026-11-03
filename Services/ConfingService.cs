@@ -108,6 +108,16 @@ public class AppConfig
     public string? Theme { get; set; }
     // Electronic invoicing. Per PC: each register can have its own point of sale.
     public ArcaConfig Arca { get; set; } = new();
+    // Ticket printer. Per PC: each register has its own printer.
+    public TicketConfig Ticket { get; set; } = new();
+}
+
+public class TicketConfig
+{
+    public string? Printer { get; set; }
+    public int PaperWidthMm { get; set; } = 80;   // 58 or 80
+    // Print the ticket as soon as a sale is confirmed, without asking
+    public bool AutoPrint { get; set; }
 }
 
 public class ArcaConfig

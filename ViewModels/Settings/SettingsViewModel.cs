@@ -10,6 +10,7 @@ using StockControl.Services.Arca;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
+using StockControl.Utils;
 
 namespace StockControl.ViewModels.Settings
 {
@@ -51,6 +52,8 @@ namespace StockControl.ViewModels.Settings
             TestConnectionCommand = new RelayCommand(async _ => await TestConnectionAsync(), _ => !IsTesting);
             OpenArcaGuideCommand = new RelayCommand(_ => OpenUrl("https://github.com/Reiseng/stock-manager-wpf/blob/main/ARCA.md"));
 
+            PrintTestTicketCommand = new RelayCommand(_ => PrintTestTicket(), _ => HasTicketPrinter);
+            PreviewTicketCommand = new RelayCommand(_ => PreviewTicket());
             LoadLogoCommand = new RelayCommand(_ => LoadLogo());
             RemoveLogoCommand = new RelayCommand(_ => RemoveLogo(), _ => HasLogo);
 
@@ -317,6 +320,77 @@ namespace StockControl.ViewModels.Settings
         {
             try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
             catch (Exception) { }
+        }
+
+        // ---- Tickets (per PC) ----
+        private static TicketConfig TicketCfg => ConfigService.Config.Ticket;
+        public List<string> Printers { get; } = TicketPrinter.InstalledPrinters();
+        public RelayCommand PrintTestTicketCommand { get; }
+        public RelayCommand PreviewTicketCommand { get; }
+
+        public string? TicketPrinterName
+        {
+            get => TicketCfg.Printer;
+            set
+            {
+                TicketCfg.Printer = string.IsNullOrWhiteSpace(value) ? null : value;
+                ConfigService.Save();
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasTicketPrinter));
+                PrintTestTicketCommand.RaiseCanExecuteChanged();
+            }
+        }
+        public bool HasTicketPrinter => !string.IsNullOrWhiteSpace(TicketCfg.Printer);
+        public bool NoPrinters => Printers.Count == 0;
+
+        public bool Paper80
+        {
+            get => TicketCfg.PaperWidthMm != 58;
+            set { if (value) SetPaper(80); }
+        }
+        public bool Paper58
+        {
+            get => TicketCfg.PaperWidthMm == 58;
+            set { if (value) SetPaper(58); }
+        }
+        private void SetPaper(int mm)
+        {
+            TicketCfg.PaperWidthMm = mm;
+            ConfigService.Save();
+            OnPropertyChanged(nameof(Paper80));
+            OnPropertyChanged(nameof(Paper58));
+        }
+
+        public bool TicketAutoPrint
+        {
+            get => TicketCfg.AutoPrint;
+            set { TicketCfg.AutoPrint = value; ConfigService.Save(); OnPropertyChanged(); }
+        }
+
+        private void PrintTestTicket()
+        {
+            try
+            {
+                TicketPrinter.Print(TicketPrinter.Sample(_companyService.GetCompanyInfo()));
+            }
+            catch (Exception ex)
+            {
+                ErrorLog.Write("Ticket de prueba", ex);
+                MessageBox.Show($"No se pudo imprimir:\n{ex.Message}", "Ticket de prueba", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void PreviewTicket()
+        {
+            try
+            {
+                new TicketDocument(TicketPrinter.Sample(_companyService.GetCompanyInfo()), TicketCfg.PaperWidthMm)
+                    .GeneratePdfAndShow("Ticket de prueba");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudo generar:\n{ex.Message}", "Ticket de prueba", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         // ---- Apariencia ----

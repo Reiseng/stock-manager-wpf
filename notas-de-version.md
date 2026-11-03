@@ -1,2 +1,3 @@
-- El programa pasa a .NET 10 (versión con soporte a largo plazo hasta noviembre de 2028).
-- Componentes actualizados, incluido el motor de base de datos SQLite, con correcciones de seguridad.
+- Tickets para impresora térmica (58 u 80 mm): con CAE salen como factura electrónica válida, con el QR de ARCA.
+- Se configura en Configuración > Tickets: impresora, ancho del papel e impresión automática al confirmar la venta.
+- Desde el Historial se puede reimprimir el ticket de cualquier venta.

@@ -8,6 +8,7 @@ using StockControl.Enums;
 using StockControl.Models;
 using StockControl.Services;
 using StockControl.Services.Arca;
+using StockControl.Utils;
 using StockControl.ViewModels.Clients;
 using StockControl.ViewModels.Products;
 using StockControl.Views;
@@ -609,7 +610,26 @@ namespace StockControl.ViewModels.Checkouts
         public void OpenActions()
         {
             var invoice = InvoiceDto.From(lastCheckout, AppServices.CompanyService.GetCompanyInfo());
-            var vm = new PrintActionViewModel(invoice);
+
+            // "Imprimir ticket automáticamente": no dialog, unless something needs attention
+            string? printError = null;
+            var ok = invoice.FiscalStatus == FiscalStatus.Internal || invoice.FiscalStatus == FiscalStatus.Authorized;
+            if (ok && TicketPrinter.IsConfigured && TicketPrinter.Config.AutoPrint
+                && invoice.operationType != OperationType.Budget)
+            {
+                try
+                {
+                    TicketPrinter.Print(invoice);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    ErrorLog.Write("Imprimir ticket", ex);
+                    printError = ex.Message;
+                }
+            }
+
+            var vm = new PrintActionViewModel(invoice) { PrintError = printError };
             var view = new PrintActionWindow
             {
                 DataContext = vm,

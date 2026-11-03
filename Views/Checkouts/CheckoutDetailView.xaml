@@ -64,9 +64,13 @@
                 <TextBlock Text="Total con IVA" Style="{StaticResource Subtle}"/>
                 <TextBlock Text="{Binding Total, StringFormat={}{0:C2}}" Style="{StaticResource Figure}"/>
             </StackPanel>
-            <Button Style="{StaticResource Button.Primary}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                    Tag="&#xE749;" Content="Generar PDF" ContentTemplate="{StaticResource IconText}"
-                    Command="{Binding PrintPDFCommand}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                <Button Tag="&#xE749;" Content="Ticket" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding PrintTicketCommand}" ToolTip="Reimprimir el ticket"/>
+                <Button Style="{StaticResource Button.Primary}" Margin="10,0,0,0"
+                        Tag="&#xE8A5;" Content="Generar PDF" ContentTemplate="{StaticResource IconText}"
+                        Command="{Binding PrintPDFCommand}"/>
+            </StackPanel>
         </Grid>
     </Grid>
 </UserControl>

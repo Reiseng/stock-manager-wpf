@@ -228,34 +228,38 @@ namespace StockControl.Services
         }
 
         // QR required on printed ARCA vouchers (spec: arca.gob.ar/fe/qr)
-        public string QrUrl()
+        public string QrUrl() => QrUrlFor(Invoice);
+
+        public static string QrUrlFor(InvoiceDto invoice)
         {
-            var cuit = long.Parse(FiscalService.IssuerCuit(Invoice.seller));
+            var cuit = long.Parse(FiscalService.IssuerCuit(invoice.seller));
             var data = new Dictionary<string, object>
             {
                 ["ver"] = 1,
-                ["fecha"] = Invoice.date.ToString("yyyy-MM-dd"),
+                ["fecha"] = invoice.date.ToString("yyyy-MM-dd"),
                 ["cuit"] = cuit,
-                ["ptoVta"] = Invoice.PointOfSale,
-                ["tipoCmp"] = Invoice.VoucherType,
-                ["nroCmp"] = Invoice.VoucherNumber,
-                ["importe"] = Invoice.total,
+                ["ptoVta"] = invoice.PointOfSale,
+                ["tipoCmp"] = invoice.VoucherType,
+                ["nroCmp"] = invoice.VoucherNumber,
+                ["importe"] = invoice.total,
                 ["moneda"] = "PES",
                 ["ctz"] = 1,
-                ["tipoDocRec"] = Invoice.DocType,
-                ["nroDocRec"] = Invoice.DocNumber,
+                ["tipoDocRec"] = invoice.DocType,
+                ["nroDocRec"] = invoice.DocNumber,
                 ["tipoCodAut"] = "E",
-                ["codAut"] = long.Parse(Invoice.Cae ?? "0"),
+                ["codAut"] = long.Parse(invoice.Cae ?? "0"),
             };
             var json = JsonSerializer.Serialize(data);
             return "https://www.arca.gob.ar/fe/qr/?p=" + Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
         }
 
-        private byte[] QrPng()
+        private byte[] QrPng() => QrPngFor(Invoice);
+
+        public static byte[] QrPngFor(InvoiceDto invoice, int pixelsPerModule = 8)
         {
             using var generator = new QRCodeGenerator();
-            using var qr = generator.CreateQrCode(QrUrl(), QRCodeGenerator.ECCLevel.M);
-            return new PngByteQRCode(qr).GetGraphic(8);
+            using var qr = generator.CreateQrCode(QrUrlFor(invoice), QRCodeGenerator.ECCLevel.M);
+            return new PngByteQRCode(qr).GetGraphic(pixelsPerModule);
         }
     }
 }

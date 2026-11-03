@@ -22,6 +22,27 @@ namespace StockControl.ViewModels.Checkouts
             ClientDto?.Dni?? "";
         public event PropertyChangedEventHandler? PropertyChanged;
         public RelayCommand PrintPDFCommand { get; }
+        public RelayCommand PrintTicketCommand { get; }
+
+        // Reprint the ticket (or save it as PDF if there is no ticket printer on this PC)
+        private void PrintTicket()
+        {
+            var invoice = InvoiceDto.From(_model, company!);
+            try
+            {
+                if (StockControl.Utils.TicketPrinter.IsConfigured)
+                    StockControl.Utils.TicketPrinter.Print(invoice);
+                else
+                    new TicketDocument(invoice, StockControl.Utils.TicketPrinter.Config.PaperWidthMm)
+                        .GeneratePdfAndShow($"Ticket_{invoice.FormattedNumber}");
+            }
+            catch (Exception ex)
+            {
+                StockControl.Utils.ErrorLog.Write("Imprimir ticket", ex);
+                System.Windows.MessageBox.Show($"No se pudo imprimir el ticket:\n{ex.Message}", "Ticket",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            }
+        }
         protected void OnPropertyChanged(string propertyName)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
@@ -49,6 +70,7 @@ namespace StockControl.ViewModels.Checkouts
             Date = Checkout.Date;
             Total = model.Total;
             PrintPDFCommand = new RelayCommand(_ => GenerateInvoicePDF());
+            PrintTicketCommand = new RelayCommand(_ => PrintTicket());
         }
         private int _id;
         public int ID

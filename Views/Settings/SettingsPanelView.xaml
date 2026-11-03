@@ -172,6 +172,47 @@
                 </StackPanel>
             </Border>
 
+            <!-- Tickets -->
+            <Border Style="{StaticResource Panel}" Padding="28,24" Margin="0,20,0,0">
+                <StackPanel>
+                    <TextBlock Text="Tickets" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Style="{StaticResource Subtle}" Margin="0,4,0,0"
+                               Text="Impresora térmica de esta PC. Con CAE, el ticket es una factura electrónica válida (lleva el QR de ARCA)."/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="18"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Impresora" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox ItemsSource="{Binding Printers}" SelectedItem="{Binding TicketPrinterName}"/>
+                            <TextBlock Style="{StaticResource Subtle}" FontSize="12" Margin="0,6,0,0"
+                                       Text="No hay impresoras instaladas en esta PC. Instalá el driver de la impresora de tickets y volvé a entrar."
+                                       Visibility="{Binding NoPrinters, Converter={StaticResource BoolToVisibility}}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Ancho del papel" Style="{StaticResource FieldLabel}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <RadioButton Content="80 mm" IsChecked="{Binding Paper80}" GroupName="TicketPaper"
+                                             Margin="0,0,18,0" VerticalContentAlignment="Center" Foreground="{DynamicResource Brush.Ink}"/>
+                                <RadioButton Content="58 mm" IsChecked="{Binding Paper58}" GroupName="TicketPaper"
+                                             VerticalContentAlignment="Center" Foreground="{DynamicResource Brush.Ink}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                    <CheckBox Content="Imprimir el ticket automáticamente al confirmar cada venta" IsChecked="{Binding TicketAutoPrint}"
+                              Margin="0,18,0,0"/>
+                    <TextBlock Style="{StaticResource Subtle}" FontSize="12" Margin="26,4,0,0"
+                               Text="Sin preguntar. Si falta el CAE o la impresora falla, igual aparece el aviso."/>
+                    <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                        <Button Content="Imprimir ticket de prueba" Command="{Binding PrintTestTicketCommand}"/>
+                        <Button Content="Ver ticket de prueba (PDF)" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
+                                Command="{Binding PreviewTicketCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Appearance -->
             <Border Style="{StaticResource Panel}" Padding="28,24" Margin="0,20,0,0">
                 <StackPanel>
