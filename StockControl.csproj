@@ -4,7 +4,7 @@
     <OutputType>WinExe</OutputType>
     <AssemblyName>StockManager</AssemblyName>
     <Product>Stock Manager</Product>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Nullable>enable</Nullable>
@@ -27,9 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
     <PackageReference Include="QuestPDF" Version="2025.12.3" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.2" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
     <PackageReference Include="Velopack" Version="1.2.161" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
     <PackageReference Include="QRCoder" Version="1.8.0" />

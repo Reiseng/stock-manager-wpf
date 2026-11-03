@@ -1,10 +1,2 @@
-- Facturación electrónica con ARCA: casilla "Facturar en ARCA" (F9) en la caja, en prueba (homologación) o producción.
-- Ventas pendientes de CAE se reintentan solas; las internas se pueden facturar después desde el Historial.
-- Condición frente al IVA en los clientes (define Factura A, B o C).
-- Comprobantes en PDF con CAE, código QR de ARCA y leyenda de transparencia fiscal.
-- Botón "Soporte" con los datos de contacto (en el menú, el login y la caja).
-- Gráficas de ventas en el inicio (administrador): por día, semana o mes, productos más vendidos, horarios y días con más ventas.
-- Logo del negocio: se carga desde Configuración > Datos del negocio.
-- Las ventas pendientes de CAE se envían solas al volver internet (y cada minuto).
-- Generar otro pedido de certificado ya no invalida el anterior.
-- Se muestra la versión instalada correcta.
+- El programa pasa a .NET 10 (versión con soporte a largo plazo hasta noviembre de 2028).
+- Componentes actualizados, incluido el motor de base de datos SQLite, con correcciones de seguridad.

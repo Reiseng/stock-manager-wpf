@@ -1,6 +1,6 @@
 # StockControl - Inventory Management System (WPF)
 
-Desktop application for stock management, sales operations, and basic business administration, developed in C# using WPF (.NET 9).
+Desktop application for stock management, sales operations, and basic business administration, developed in C# using WPF (.NET 10).
 
 This project simulates a real-world system for small businesses, including inventory control, role-based access, and PDF generation.
 
@@ -25,7 +25,7 @@ This project simulates a real-world system for small businesses, including inven
 ## 🛠️ Technologies Used
 
 - C#
-- .NET 9 (WPF)
+- .NET 10 (WPF)
 - SQLite
 - MVVM Pattern
 - LINQ
