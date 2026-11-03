@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows.Input;
 using StockControl.Views.Clients;
 using StockControl.Views.Products;
@@ -34,6 +34,9 @@ namespace StockControl.ViewModels
             }
         }
         public string Title { get; private set; }
+
+        // Sales charts on the home screen (only administrators see them)
+        public SalesStatsViewModel? SalesStats { get; }
         private int _totalProductos;
         public int TotalProductos
         {
@@ -108,6 +111,8 @@ namespace StockControl.ViewModels
             if (CurrentUser.Role == RoleType.Repository){
                 ViewMode = RoleMode.RepositoryOnly;
             }
+            if (ViewMode == RoleMode.AdminOnly)
+                SalesStats = new SalesStatsViewModel(new Data.SalesStatsPersistence(AppServices.DatabaseContext));
             if (CurrentView == null)
             {
                 CurrentView = new MainView
@@ -198,6 +203,8 @@ namespace StockControl.ViewModels
 
             // Empresa
             Empresa = AppServices.CompanyService.GetCompanyInfo();
+
+            SalesStats?.Refresh();
 
         }
         public event PropertyChangedEventHandler PropertyChanged;

@@ -51,9 +51,104 @@ namespace StockControl.ViewModels.Settings
             TestConnectionCommand = new RelayCommand(async _ => await TestConnectionAsync(), _ => !IsTesting);
             OpenArcaGuideCommand = new RelayCommand(_ => OpenUrl("https://github.com/Reiseng/stock-manager-wpf/blob/main/ARCA.md"));
 
+            LoadLogoCommand = new RelayCommand(_ => LoadLogo());
+            RemoveLogoCommand = new RelayCommand(_ => RemoveLogo(), _ => HasLogo);
+
             ExportDatabaseCommand = new RelayCommand(_ => ExportDatabase());
             ImportDatabaseCommand = new RelayCommand(_ => ImportDatabase());
             OpenBackupFolderCommand = new RelayCommand(_ => OpenBackupFolder());
+        }
+
+        // ---- Logo of the vouchers ----
+        // Saved as PNG in the data folder (not next to the .exe: updates replace that folder)
+        public RelayCommand LoadLogoCommand { get; }
+        public RelayCommand RemoveLogoCommand { get; }
+        public bool HasLogo => File.Exists(ConfigService.LogoPath);
+
+        // Read into memory so the file is never locked (it can be replaced or deleted)
+        public System.Windows.Media.ImageSource? LogoPreview
+        {
+            get
+            {
+                try
+                {
+                    if (!HasLogo) return null;
+                    var image = new System.Windows.Media.Imaging.BitmapImage();
+                    image.BeginInit();
+                    image.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                    image.StreamSource = new MemoryStream(File.ReadAllBytes(ConfigService.LogoPath));
+                    image.EndInit();
+                    image.Freeze();
+                    return image;
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+        }
+
+        private void LoadLogo()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Elegir el logo del negocio",
+                Filter = "Imágenes (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+            try
+            {
+                SaveLogoAsPng(dialog.FileName, ConfigService.LogoPath);
+                LogoChanged();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudo usar esa imagen:\n{ex.Message}", "Logo", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void RemoveLogo()
+        {
+            if (MessageBox.Show("¿Quitar el logo de los comprobantes?", "Logo", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+            try
+            {
+                File.Delete(ConfigService.LogoPath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudo quitar el logo:\n{ex.Message}", "Logo", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            LogoChanged();
+        }
+
+        private void LogoChanged()
+        {
+            OnPropertyChanged(nameof(HasLogo));
+            OnPropertyChanged(nameof(LogoPreview));
+            RemoveLogoCommand.RaiseCanExecuteChanged();
+        }
+
+        // Any image -> PNG, at most 800x400 (keeps the PDFs light)
+        private static void SaveLogoAsPng(string source, string target)
+        {
+            using var input = new MemoryStream(File.ReadAllBytes(source));
+            var decoder = System.Windows.Media.Imaging.BitmapDecoder.Create(input,
+                System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,
+                System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+            System.Windows.Media.Imaging.BitmapSource frame = decoder.Frames[0];
+            var scale = Math.Min(1.0, Math.Min(800.0 / frame.PixelWidth, 400.0 / frame.PixelHeight));
+            if (scale < 1.0)
+                frame = new System.Windows.Media.Imaging.TransformedBitmap(frame, new System.Windows.Media.ScaleTransform(scale, scale));
+
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(frame));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            var temp = target + ".tmp";
+            using (var output = File.Create(temp))
+                encoder.Save(output);
+            File.Move(temp, target, overwrite: true);
         }
 
         // ---- Facturación electrónica (ARCA) ----
@@ -154,7 +249,6 @@ namespace StockControl.ViewModels.Settings
         {
             try
             {
-                var csr = AppServices.FiscalService.Certificates.CreateRequest(CUIT ?? "", Name ?? "", CertificateAlias);
                 var dialog = new SaveFileDialog
                 {
                     Title = "Guardar pedido de certificado",
@@ -163,7 +257,8 @@ namespace StockControl.ViewModels.Settings
                     Filter = "Pedido de certificado (*.csr)|*.csr"
                 };
                 if (dialog.ShowDialog() != true)
-                    return;
+                    return; // cancelled: nothing is generated
+                var csr = AppServices.FiscalService.Certificates.CreateRequest(CUIT ?? "", Name ?? "", CertificateAlias);
                 File.WriteAllText(dialog.FileName, csr);
                 OnPropertyChanged(nameof(CertificateStatus));
                 MessageBox.Show($"Pedido guardado en:\n{dialog.FileName}\n\nAhora subilo a ARCA con el alias \"{CertificateAlias}\" " +

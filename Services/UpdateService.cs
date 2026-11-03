@@ -32,13 +32,21 @@ namespace StockControl.Services
 
         public bool IsInstalled => _manager?.IsInstalled == true;
 
-        // Version shown in the UI: the installed one, or the one of the build
+        // Version shown in the UI. Installed: the version Velopack installed (the
+        // release tag). Run from Visual Studio: "desarrollo", because that build's
+        // number is just the placeholder in the .csproj.
         public static string CurrentVersionText
         {
             get
             {
-                var version = Assembly.GetEntryAssembly()?.GetName().Version;
-                return version == null ? "" : $"v{version.Major}.{version.Minor}.{version.Build}";
+                try
+                {
+                    var installed = AppServices.UpdateService?._manager;
+                    if (installed?.IsInstalled == true && installed.CurrentVersion != null)
+                        return $"v{installed.CurrentVersion}";
+                }
+                catch (Exception) { }
+                return "versión de desarrollo";
             }
         }
 

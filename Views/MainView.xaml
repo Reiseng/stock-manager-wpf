@@ -1,6 +1,7 @@
-<UserControl x:Class="StockControl.Views.MainView"
+﻿<UserControl x:Class="StockControl.Views.MainView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dash="clr-namespace:StockControl.Views.Dashboard">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel MaxWidth="1100" HorizontalAlignment="Stretch">
 
@@ -64,6 +65,12 @@
                                    Margin="0,10,0,0"/>
                     </StackPanel>
                 </Grid>
+            </Border>
+
+            <!-- Sales charts (administrators only) -->
+            <Border Margin="0,20,0,0"
+                    Visibility="{Binding ViewMode, Converter={StaticResource ModeToVisibilityConverter}, ConverterParameter=AdminOnly}">
+                <dash:SalesStatsView DataContext="{Binding SalesStats}"/>
             </Border>
 
             <!-- Business data -->

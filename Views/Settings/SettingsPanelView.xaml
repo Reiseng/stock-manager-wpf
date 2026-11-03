@@ -54,6 +54,40 @@
                             <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
                     </Grid>
+
+                    <!-- Logo -->
+                    <TextBlock Text="Logo" Style="{StaticResource FieldLabel}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="180" Height="72" CornerRadius="8" BorderThickness="1" Padding="8"
+                                BorderBrush="{DynamicResource Brush.Line}" Background="White">
+                            <Grid>
+                                <Image Source="{Binding LogoPreview}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                <TextBlock Text="Sin logo" Foreground="#8A8F98" FontSize="13"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasLogo}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Cargar logo..." Command="{Binding LoadLogoCommand}"/>
+                                <Button Content="Quitar" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
+                                        Command="{Binding RemoveLogoCommand}"/>
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Subtle}" FontSize="12" Margin="0,8,0,0"
+                                       Text="PNG o JPG. Se imprime arriba a la izquierda en los comprobantes. Se guarda al elegirlo."/>
+                        </StackPanel>
+                    </StackPanel>
+
                     <Button Content="Guardar cambios" Style="{StaticResource Button.Primary}" HorizontalAlignment="Right"
                             Margin="0,24,0,0" Command="{Binding SaveCommand}"/>
                 </StackPanel>

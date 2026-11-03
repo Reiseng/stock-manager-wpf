@@ -17,6 +17,9 @@ public static class ConfigService
 
     private static string ConfigPath => Path.Combine(DataFolder, "config.json");
 
+    // Business logo printed on the vouchers (loaded from Configuración)
+    public static string LogoPath => Path.Combine(DataFolder, "logo.png");
+
     // Absolute path of the database. A relative path in config.json is resolved
     // against the data folder (not the exe folder or the working directory).
     public static string DatabaseFullPath

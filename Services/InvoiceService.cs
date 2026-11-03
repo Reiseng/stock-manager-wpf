@@ -44,7 +44,7 @@ namespace StockControl.Services
 
         public void ComposeHeader(IContainer container)
         {
-            var logoPath = Path.Combine(AppContext.BaseDirectory, "assets", "logo.png");
+            var logoPath = ConfigService.LogoPath; // loaded from Configuración > Datos del negocio
             var seller = Invoice.seller;
 
             container.Border(1).BorderColor(Colors.Grey.Medium).Row(row =>

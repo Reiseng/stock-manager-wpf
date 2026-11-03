@@ -14,7 +14,7 @@ namespace StockControl.Services.Arca
     // (homologación or producción), in the data folder:
     //   certificado.crt       public certificate issued by ARCA
     //   clave.dat             private key, encrypted with Windows DPAPI
-    //   clave-pendiente.dat   key of a request (.csr) still waiting for its certificate
+    //   clave-pendiente-*.dat keys of requests (.csr) still waiting for their certificate
     //
     // Flow without OpenSSL: CreateRequest() makes a key + .csr, the user uploads the
     // .csr to ARCA, downloads the .crt and ImportCertificate() pairs them.
@@ -31,9 +31,17 @@ namespace StockControl.Services.Arca
 
         private string CertPath => Path.Combine(_folder, "certificado.crt");
         private string KeyPath => Path.Combine(_folder, "clave.dat");
-        private string PendingKeyPath => Path.Combine(_folder, "clave-pendiente.dat");
+        // Every request keeps its own key (clave-pendiente-<fecha>.dat), so generating
+        // a request again never invalidates one already uploaded to ARCA.
+        // (The pattern also finds "clave-pendiente.dat" from the first version.)
+        private IEnumerable<string> PendingKeyPaths()
+        {
+            if (!Directory.Exists(_folder))
+                return Enumerable.Empty<string>();
+            return Directory.GetFiles(_folder, "clave-pendiente*.dat").OrderByDescending(File.GetLastWriteTimeUtc);
+        }
 
-        public bool HasPendingRequest => File.Exists(PendingKeyPath);
+        public bool HasPendingRequest => PendingKeyPaths().Any();
 
         public CertificateInfo? Info
         {
@@ -74,7 +82,8 @@ namespace StockControl.Services.Arca
             var request = new CertificateRequest(subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
             Directory.CreateDirectory(_folder);
-            File.WriteAllBytes(PendingKeyPath, Protect(rsa.ExportPkcs8PrivateKey()));
+            var path = Path.Combine(_folder, $"clave-pendiente-{DateTime.Now:yyyyMMdd-HHmmss-fff}.dat");
+            File.WriteAllBytes(path, Protect(rsa.ExportPkcs8PrivateKey()));
             return request.CreateSigningRequestPem();
         }
 
@@ -84,6 +93,7 @@ namespace StockControl.Services.Arca
             var ext = Path.GetExtension(path).ToLowerInvariant();
             byte[] certDer;
             byte[] keyPkcs8;
+            string? usedPendingKey = null;
 
             if (ext == ".pfx" || ext == ".p12")
             {
@@ -97,23 +107,27 @@ namespace StockControl.Services.Arca
             else
             {
                 using var cert = LoadCertificateFile(path);
-                // Which of our keys does it belong to? (the pending request, or the current one)
-                var match = new[] { PendingKeyPath, KeyPath }
+                // Which of our keys does it belong to? (any pending request, or the current one)
+                var match = PendingKeyPaths().Append(KeyPath)
                     .Where(File.Exists)
-                    .Select(p => (Path: p, Key: Unprotect(File.ReadAllBytes(p))))
-                    .FirstOrDefault(k => Matches(cert, k.Key));
+                    .Select(p => (Path: p, Key: TryReadKey(p)))
+                    .FirstOrDefault(k => k.Key != null && Matches(cert, k.Key));
                 if (match.Key == null)
-                    throw new Exception("Ese certificado no corresponde al pedido generado por el programa en esta PC. " +
-                                        "Generá un pedido nuevo y subilo a ARCA, o importá un archivo .pfx.");
+                    throw new Exception("Ese certificado no corresponde a ningún pedido generado por el programa en esta PC " +
+                                        "(la clave de ese pedido ya no está). Generá un pedido nuevo con otro alias, subilo a ARCA " +
+                                        "e importá el certificado que te devuelva, o importá un archivo .pfx.");
                 certDer = cert.Export(X509ContentType.Cert);
                 keyPkcs8 = match.Key;
+                if (match.Path != KeyPath)
+                    usedPendingKey = match.Path;
             }
 
             Directory.CreateDirectory(_folder);
             File.WriteAllBytes(KeyPath, Protect(keyPkcs8));
             File.WriteAllBytes(CertPath, certDer);
-            if (File.Exists(PendingKeyPath))
-                File.Delete(PendingKeyPath);
+            // Only the key that was used: other pending requests may still get their certificate
+            if (usedPendingKey != null && File.Exists(usedPendingKey))
+                File.Delete(usedPendingKey);
 
             using var saved = X509CertificateLoader.LoadCertificate(certDer);
             return new CertificateInfo(saved.Subject, saved.NotAfter);
@@ -137,6 +151,13 @@ namespace StockControl.Services.Arca
             if (text.Contains("-----BEGIN CERTIFICATE-----"))
                 return X509Certificate2.CreateFromPem(text);
             return X509CertificateLoader.LoadCertificate(bytes);
+        }
+
+        // A key that can't be read (corrupt, or from another Windows user) is just skipped
+        private static byte[]? TryReadKey(string path)
+        {
+            try { return Unprotect(File.ReadAllBytes(path)); }
+            catch (Exception) { return null; }
         }
 
         private static bool Matches(X509Certificate2 cert, byte[] pkcs8)

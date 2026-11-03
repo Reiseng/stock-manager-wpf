@@ -198,6 +198,8 @@ namespace StockControl.Services.Arca
             return await AuthorizeAsync(checkoutId);
         }
 
+        public bool HasPending() => _checkouts.GetPendingFiscalIds().Count > 0;
+
         // Retries every pending sale. Stops at the first connection problem (no point insisting).
         public async Task<int> RetryPendingAsync()
         {

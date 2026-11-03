@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 
 namespace StockControl.Utils
 {
@@ -41,6 +41,6 @@ namespace StockControl.Utils
         }
 
         private static string UpdateServiceVersion()
-            => System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "?";
+            => StockControl.Services.UpdateService.CurrentVersionText;
     }
 }

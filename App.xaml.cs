@@ -93,6 +93,9 @@ public partial class App : Application
             return;
         }
 
+        // Created before any window: they show the installed version (no network here)
+        AppServices.UpdateService = new UpdateService();
+
         // "Mantener sesión iniciada": go straight in if there is a valid saved session
         User? rememberedUser = null;
         try
@@ -117,11 +120,29 @@ public partial class App : Application
 
         // Checked in the background: the program is usable right away, and
         // without internet nothing happens
-        AppServices.UpdateService = new UpdateService();
         _ = OfferUpdateIfAvailableAsync();
 
-        // Sales that were left waiting for a CAE (no internet last time): try again
-        _ = RetryPendingInvoicesAsync();
+        // Sales that were left waiting for a CAE (no internet): try again now,
+        // every minute while there are any, and as soon as the network comes back
+        StartPendingInvoiceRetries();
+    }
+
+    private static int _retrying; // 1 while a retry round is running
+    private System.Windows.Threading.DispatcherTimer? _retryTimer;
+
+    private void StartPendingInvoiceRetries()
+    {
+        _ = RetryPendingInvoicesAsync(TimeSpan.FromSeconds(5));
+
+        _retryTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        _retryTimer.Tick += (_, _) => _ = RetryPendingInvoicesAsync(TimeSpan.Zero);
+        _retryTimer.Start();
+
+        System.Net.NetworkInformation.NetworkChange.NetworkAvailabilityChanged += (_, args) =>
+        {
+            if (args.IsAvailable)
+                _ = RetryPendingInvoicesAsync(TimeSpan.FromSeconds(5)); // give the connection a moment
+        };
     }
 
     private async Task OfferUpdateIfAvailableAsync()
@@ -149,16 +170,28 @@ public partial class App : Application
         }
     }
 
-    private static async Task RetryPendingInvoicesAsync()
+    private static async Task RetryPendingInvoicesAsync(TimeSpan delay)
     {
+        if (Interlocked.Exchange(ref _retrying, 1) == 1)
+            return; // a round is already running
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            await AppServices.FiscalService.RetryPendingAsync();
+            if (delay > TimeSpan.Zero)
+                await Task.Delay(delay);
+            var fiscal = AppServices.FiscalService;
+            if (fiscal == null || !fiscal.IsEnabled || !fiscal.HasPending())
+                return;
+            var sent = await fiscal.RetryPendingAsync();
+            if (sent > 0)
+                ErrorLog.Note($"ARCA: se autorizaron {sent} comprobantes pendientes");
         }
         catch (Exception ex)
         {
             ErrorLog.Write("Reintentar comprobantes pendientes", ex);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _retrying, 0);
         }
     }
 
