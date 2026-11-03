@@ -287,6 +287,13 @@
             <!-- Backups -->
             <Border Style="{StaticResource Panel}" Padding="28,24" Margin="0,20,0,24">
                 <StackPanel>
+                    <!-- Where the data lives -->
+                    <TextBlock Text="Base de datos" Style="{StaticResource SectionTitle}"/>
+                    <Grid Margin="0,6,0,22">
+                        <TextBlock Text="{Binding DatabaseKindText}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,180,0"/>
+                        <Button HorizontalAlignment="Right" Content="Cambiar base de datos..." Command="{Binding ChangeDatabaseCommand}"/>
+                    </Grid>
+
                     <TextBlock Text="Copias de seguridad" Style="{StaticResource SectionTitle}"/>
                     <TextBlock Style="{StaticResource Subtle}" Margin="0,4,0,0"
                                Text="Exportá una copia para guardarla en un pendrive o en la nube. Importar reemplaza todos los datos actuales por los de la copia (antes se guarda una copia de lo que había)."/>

@@ -1,15 +1,18 @@
 using System.IO;
 using Microsoft.Data.Sqlite;
 using StockControl.Config.DataBaseConfig;
+using StockControl.Data.Ef;
 using StockControl.Services.Database;
 
 namespace StockControl.Services
 {
     // Export / import of the whole database and automatic backups.
     //
-    // It uses SQLite's online backup API (BackupDatabase) instead of copying the
-    // file: it produces a consistent copy even while the program is using the
-    // database, and it doesn't fail because the file is open.
+    // The copies are always SQLite files (.db), whatever the engine:
+    //  - SQLite: SQLite's online backup API (BackupDatabase) instead of copying the
+    //    file: a consistent copy even while the program is using the database.
+    //  - PostgreSQL: every row is copied to a new .db file (DataTransfer). The same
+    //    file can be imported back into a server, or into a PC without a server.
     public class BackupService
     {
         private const int AutomaticBackupsToKeep = 30;
@@ -26,7 +29,9 @@ namespace StockControl.Services
         }
 
         public string DatabasePath => databasePath;
-        public string BackupFolder => Path.Combine(Path.GetDirectoryName(databasePath)!, "Backups");
+        public string BackupFolder => db.IsSqlite
+            ? Path.Combine(Path.GetDirectoryName(databasePath)!, "Backups")
+            : Path.Combine(ConfigService.DataFolder, "Backups-servidor");
 
         public static string SuggestedExportFileName()
             => $"StockManager-copia-{DateTime.Now:yyyyMMdd-HHmm}.db";
@@ -67,6 +72,12 @@ namespace StockControl.Services
             if (File.Exists(destinationPath))
                 File.Delete(destinationPath);
 
+            if (!db.IsSqlite)
+            {
+                ExportServerTo(destinationPath);
+                return;
+            }
+
             using var source = db.CreateConnection();
             source.Open();
             using var destination = new SqliteConnection(new SqliteConnectionStringBuilder
@@ -78,10 +89,65 @@ namespace StockControl.Services
             source.BackupDatabase(destination);
         }
 
+        // Server -> new .db file with the same schema and all the rows
+        private void ExportServerTo(string destinationPath)
+        {
+            var file = new DatabaseContext(new SqliteConnectionStringBuilder
+            {
+                DataSource = destinationPath,
+                ForeignKeys = true,
+                Pooling = false
+            }.ToString());
+            try
+            {
+                new DatabaseInitializer(file).Initialize();
+                DataTransfer.CopyAll(db, file);
+            }
+            catch
+            {
+                SqliteConnection.ClearAllPools();
+                try { File.Delete(destinationPath); } catch (IOException) { }
+                throw;
+            }
+            SqliteConnection.ClearAllPools();
+        }
+
+        // .db file -> server. The file is brought up to date on a temporary copy
+        // first; the server is replaced in one transaction (all or nothing).
+        private void ImportIntoServer(string sourcePath)
+        {
+            var temp = Path.Combine(Path.GetTempPath(), $"stockmanager-importar-{Guid.NewGuid():N}.db");
+            File.Copy(sourcePath, temp);
+            try
+            {
+                var file = new DatabaseContext(new SqliteConnectionStringBuilder
+                {
+                    DataSource = temp,
+                    ForeignKeys = true,
+                    Pooling = false
+                }.ToString());
+                new DatabaseInitializer(file).Initialize();
+                DataTransfer.CopyAll(file, db);
+            }
+            finally
+            {
+                SqliteConnection.ClearAllPools();
+                try { File.Delete(temp); } catch (IOException) { }
+            }
+        }
+
         // Replaces the current data with the content of the given file.
         // A safety copy of the current data is made first.
         public void ImportFrom(string sourcePath)
         {
+            if (!db.IsSqlite)
+            {
+                ValidateBackupFile(sourcePath);
+                CreateAutomaticBackup("antes-de-importar");
+                ImportIntoServer(sourcePath);
+                return;
+            }
+
             if (Path.GetFullPath(sourcePath).Equals(Path.GetFullPath(databasePath), StringComparison.OrdinalIgnoreCase))
                 throw new Exception("Ese archivo es la base de datos que se está usando ahora.");
 

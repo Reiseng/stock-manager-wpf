@@ -1,84 +1,56 @@
 // Company is a business or organization that provides goods or services to customers.
 // Company data persistence involves storing and retrieving company information from a database.
-
-using StockControl.Models;
-using StockControl.Enums;
 using StockControl.Config.DataBaseConfig;
+using StockControl.Data.Ef;
+using StockControl.Enums;
 
-namespace StockControl.Data{
-public class CompanyPersistence
+namespace StockControl.Data
+{
+    public class CompanyPersistence
     {
-        private  readonly DatabaseContext db;
+        private readonly DatabaseContext db;
+
         public CompanyPersistence(DatabaseContext dbContext)
         {
             db = dbContext;
         }
+
         public Company? GetCompany()
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT Id, CUIT, Name, Address, Phone, Email, TaxCondition
-                FROM CompanyInfo
-                LIMIT 1;
-                ";
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                var company = new Company(
-                    reader.IsDBNull(1) ? null : reader.GetString(1),
-                    reader.IsDBNull(2) ? null : reader.GetString(2),
-                    reader.IsDBNull(3) ? null : reader.GetString(3),
-                    reader.IsDBNull(4) ? null : reader.GetString(4),
-                    reader.IsDBNull(5) ? null : reader.GetString(5),
-                    (TaxCondition)reader.GetInt32(6)
-                );
-                company.Id = reader.GetInt32(0);
-                return company;
-            }
-            return null;
+            using var ctx = db.CreateDbContext();
+            var r = ctx.Company.OrderBy(c => c.Id).FirstOrDefault();
+            if (r == null)
+                return null;
+            return new Company(r.CUIT, r.Name, r.Address, r.Phone, r.Email, (TaxCondition)r.TaxCondition) { Id = r.Id };
         }
+
         public void AddCompany(Company company)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    INSERT INTO CompanyInfo (CUIT, Name, Address, Phone, Email, TaxCondition)
-                    VALUES (@cuit, @name, @address, @phone, @email, @taxCondition);
-                    ";
-            command.Parameters.AddWithValue("@cuit", company.CUIT);
-            command.Parameters.AddWithValue("@name", company.Name);
-            command.Parameters.AddWithValue("@address", (object?)company.Address ?? DBNull.Value);
-            command.Parameters.AddWithValue("@phone", (object?)company.Phone ?? DBNull.Value);
-            command.Parameters.AddWithValue("@email", (object?)company.Email ?? DBNull.Value);
-            command.Parameters.AddWithValue("@taxCondition", (int)company.taxCondition);
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            var row = new CompanyRow();
+            Copy(company, row);
+            ctx.Company.Add(row);
+            ctx.SaveChanges();
+            company.Id = row.Id;
         }
+
         public void UpdateCompany(Company company)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    UPDATE CompanyInfo
-                    SET CUIT = @cuit,
-                        Name = @name,
-                        Address = @address,
-                        Phone = @phone,
-                        Email = @email,
-                        TaxCondition = @taxCondition
-                    WHERE Id = @id;
-                    ";
-            command.Parameters.AddWithValue("@cuit", company.CUIT);
-            command.Parameters.AddWithValue("@name", company.Name);
-            command.Parameters.AddWithValue("@address", (object?)company.Address ?? DBNull.Value);
-            command.Parameters.AddWithValue("@phone", (object?)company.Phone ?? DBNull.Value);
-            command.Parameters.AddWithValue("@email", (object?)company.Email ?? DBNull.Value);
-            command.Parameters.AddWithValue("@taxCondition", (int)company.taxCondition);
-            command.Parameters.AddWithValue("@id", company.Id);
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            var row = new CompanyRow { Id = company.Id };
+            Copy(company, row);
+            ctx.Company.Update(row);
+            ctx.SaveChanges();
+        }
+
+        private static void Copy(Company company, CompanyRow row)
+        {
+            row.CUIT = company.CUIT ?? "";
+            row.Name = company.Name ?? "";
+            row.Address = company.Address ?? "";
+            row.Phone = company.Phone;
+            row.Email = company.Email;
+            row.TaxCondition = (int)company.taxCondition;
         }
     }
 }

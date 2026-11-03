@@ -28,25 +28,20 @@ public partial class App : Application
             args.Handled = true;
         };
 
+        // Dialogs shown before the main window (database setup) must not end the program
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         try
         {
             ConfigService.Load();
             ThemeService.Initialize(ConfigService.Config.Theme);
 
-            var dbPath = ConfigService.DatabaseFullPath;
-            Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+            // First time on this PC: where will the data live?
+            if (ConfigService.IsNewInstall)
+                new Views.Windows.DatabaseSetupWindow(firstRun: true).ShowDialog();
 
-            var connectionString = new SqliteConnectionStringBuilder
-            {
-                DataSource = dbPath,
-                ForeignKeys = true
-            }.ToString();
-
-            AppServices.DatabaseContext = new DatabaseContext(connectionString);
-            AppServices.BackupService = new BackupService(AppServices.DatabaseContext, dbPath);
-            // Applies pending migrations (with a safety copy first) and base data
-            var dbInitializer = new DatabaseInitializer(AppServices.DatabaseContext, AppServices.BackupService);
-            dbInitializer.Initialize();
+            ConnectDatabase();
+            var dbPath = ConfigService.DatabaseDescription;
             try
             {
                 AppServices.BackupService.DailyBackupIfNeeded();
@@ -84,6 +79,11 @@ public partial class App : Application
         catch (Exception ex)
         {
             ErrorLog.Write("Inicio del programa", ex);
+            if (ex is StartupCancelledException)
+            {
+                Shutdown(0);
+                return;
+            }
             MessageBox.Show(
                 $"No se pudo iniciar el programa:\n\n{ex.Message}",
                 "Stock Manager",
@@ -117,6 +117,8 @@ public partial class App : Application
             // Opened here instead of StartupUri so it never opens after a failed startup
             new Views.LogginWindow().Show();
         }
+        // From now on, closing the last window closes the program (as usual)
+        ShutdownMode = ShutdownMode.OnLastWindowClose;
 
         // Checked in the background: the program is usable right away, and
         // without internet nothing happens
@@ -126,6 +128,37 @@ public partial class App : Application
         // every minute while there are any, and as soon as the network comes back
         StartPendingInvoiceRetries();
     }
+
+    // Opens the database (SQLite file or PostgreSQL server) and brings it up to date.
+    // If the server can't be reached, offers to fix the connection and tries again.
+    private static void ConnectDatabase()
+    {
+        while (true)
+        {
+            try
+            {
+                AppServices.DatabaseContext = ConfigService.CreateDatabaseContext();
+                AppServices.BackupService = new BackupService(AppServices.DatabaseContext, ConfigService.DatabaseDescription);
+                // Applies pending migrations (with a safety copy first) and base data
+                new DatabaseInitializer(AppServices.DatabaseContext, AppServices.BackupService).Initialize();
+                return;
+            }
+            catch (Exception ex) when (ConfigService.Provider == DatabaseProvider.PostgreSql)
+            {
+                ErrorLog.Write("Conectar con el servidor", ex);
+                var answer = MessageBox.Show(
+                    $"No se pudo conectar con el servidor de la base de datos ({ConfigService.Config.Database.Host}):\n\n{ex.Message}\n\n" +
+                    "Sí: revisar la conexión.\nNo: volver a intentar.\nCancelar: cerrar el programa.",
+                    "Stock Manager", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                if (answer == MessageBoxResult.Cancel)
+                    throw new StartupCancelledException();
+                if (answer == MessageBoxResult.Yes)
+                    new Views.Windows.DatabaseSetupWindow(firstRun: true).ShowDialog();
+            }
+        }
+    }
+
+    private sealed class StartupCancelledException : Exception { }
 
     private static int _retrying; // 1 while a retry round is running
     private System.Windows.Threading.DispatcherTimer? _retryTimer;

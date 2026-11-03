@@ -1,3 +1,5 @@
-- Tickets para impresora térmica (58 u 80 mm): con CAE salen como factura electrónica válida, con el QR de ARCA.
-- Se configura en Configuración > Tickets: impresora, ancho del papel e impresión automática al confirmar la venta.
-- Desde el Historial se puede reimprimir el ticket de cualquier venta.
+- Nueva forma de guardar los datos (EF Core): todo sigue igual en esta PC, y ahora también se puede usar un servidor PostgreSQL para varias cajas.
+- Configuración > Base de datos > "Cambiar base de datos...": elegís entre esta PC o un servidor, con prueba de conexión, y podés copiar los datos de esta PC al servidor.
+- Con varias cajas, cada una reintenta solo sus ventas pendientes de CAE (según su punto de venta).
+- Las copias de seguridad también funcionan con el servidor (se guardan como archivo en esta PC).
+- El historial de ventas carga más rápido.

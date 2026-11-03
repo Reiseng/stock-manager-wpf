@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using StockControl.Config.DataBaseConfig;
+using StockControl.Data.Ef;
 using StockControl.Enums;
 using StockControl.Models;
 
@@ -7,6 +9,7 @@ namespace StockControl.Data
     public class UserPersistence
     {
         private readonly DatabaseContext db;
+
         public UserPersistence(DatabaseContext dbContext)
         {
             db = dbContext;
@@ -14,203 +17,107 @@ namespace StockControl.Data
 
         public List<User> GetAll(bool includeInactive = false)
         {
-            var users = new List<User>();
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT ID, Username, PasswordHash, Role, IsActive
-                FROM Users
-                ";
-            if (!includeInactive)
-            {
-                command.CommandText += " WHERE IsActive = 1";
-            }
-            command.CommandText += ";";
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                var user = new User(
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    (RoleType)reader.GetInt32(3),
-                    reader.GetInt32(4) == 1 ? true : false
-                );
-                user.ID = reader.GetInt32(0);
-                users.Add(user);
-            }
-            return users;
+            using var ctx = db.CreateDbContext();
+            return Query(ctx, includeInactive).OrderBy(u => u.Id).AsEnumerable().Select(ToModel).ToList();
         }
+
         public User? GetByID(int id, bool includeInactive = false)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT ID, Username, PasswordHash, Role, IsActive
-                FROM Users
-                WHERE ID = @id";
-            if (!includeInactive)
-            {
-                command.CommandText += " AND IsActive = 1";
-            }
-            command.CommandText += ";";
-            command.Parameters.AddWithValue("@id", id);
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                var user = new User(
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    (RoleType)reader.GetInt32(3),
-                    reader.GetInt32(4) == 1 ? true : false
-                );
-                user.ID = reader.GetInt32(0);
-                return user;
-            }
-            return null;
+            using var ctx = db.CreateDbContext();
+            var row = Query(ctx, includeInactive).FirstOrDefault(u => u.Id == id);
+            return row == null ? null : ToModel(row);
         }
-        public User? GetByUsername(string username, bool includeInactive = false) 
+
+        public User? GetByUsername(string username, bool includeInactive = false)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT ID, Username, PasswordHash, Role, IsActive
-                FROM Users
-                WHERE Username = @username";
-            if (!includeInactive)
-            {
-                command.CommandText += " AND IsActive = 1";
-            }
-            command.CommandText += ";";
-            command.Parameters.AddWithValue("@username", username);
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                var user = new User(
-                    reader.GetString(1),
-                    reader.GetString(2),
-                    (RoleType)reader.GetInt32(3),
-                    reader.GetInt32(4) == 1 ? true : false
-                );
-                user.ID = reader.GetInt32(0);
-                return user;
-            }
-            return null;
+            using var ctx = db.CreateDbContext();
+            var row = Query(ctx, includeInactive).FirstOrDefault(u => u.Username == username);
+            return row == null ? null : ToModel(row);
         }
+
         public void Add(User user)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                INSERT INTO Users (Username, Passwordhash, Role, IsActive)
-                VALUES (@username, @passwordhash, @role, @isActive);
-                ";
-            command.Parameters.AddWithValue("@username", user.Username);
-            command.Parameters.AddWithValue("@passwordhash", user.Password);
-            command.Parameters.AddWithValue("@role", (int)user.Role);
-            command.Parameters.AddWithValue("@isActive",user.IsActive ? 1 : 0);
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            var row = new UserRow();
+            Copy(user, row);
+            ctx.Users.Add(row);
+            ctx.SaveChanges();
+            user.ID = row.Id;
         }
+
         public void Remove(int id)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                UPDATE Users
-                SET IsActive = 0
-                WHERE ID = @id;
-                ";
-            command.Parameters.AddWithValue("@id", id);
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            ctx.Users.Where(u => u.Id == id)
+                .ExecuteUpdate(s => s.SetProperty(u => u.IsActive, false));
         }
+
+        public void Update(User user)
+        {
+            using var ctx = db.CreateDbContext();
+            var row = new UserRow { Id = user.ID };
+            Copy(user, row);
+            ctx.Users.Update(row);
+            ctx.SaveChanges();
+        }
+
         // ---- Saved sessions ("mantener sesión iniciada") ----
         public void AddSession(int userId, string tokenHash, string deviceName, DateTime now)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                INSERT INTO UserSessions (UserId, TokenHash, DeviceName, CreatedAt, LastUsedAt)
-                VALUES (@userId, @tokenHash, @deviceName, @now, @now);
-                ";
-            command.Parameters.AddWithValue("@userId", userId);
-            command.Parameters.AddWithValue("@tokenHash", tokenHash);
-            command.Parameters.AddWithValue("@deviceName", deviceName);
-            command.Parameters.AddWithValue("@now", now.ToString("yyyy-MM-dd HH:mm:ss"));
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            ctx.UserSessions.Add(new UserSessionRow
+            {
+                UserId = userId,
+                TokenHash = tokenHash,
+                DeviceName = deviceName,
+                CreatedAt = Seconds(now),
+                LastUsedAt = Seconds(now),
+            });
+            ctx.SaveChanges();
         }
+
         public UserSession? GetSessionByTokenHash(string tokenHash)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT Id, UserId, LastUsedAt
-                FROM UserSessions
-                WHERE TokenHash = @tokenHash;
-                ";
-            command.Parameters.AddWithValue("@tokenHash", tokenHash);
-            using var reader = command.ExecuteReader();
-            if (!reader.Read())
-                return null;
-            return new UserSession(
-                reader.GetInt32(0),
-                reader.GetInt32(1),
-                DateTime.ParseExact(reader.GetString(2), "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
+            using var ctx = db.CreateDbContext();
+            var row = ctx.UserSessions.FirstOrDefault(s => s.TokenHash == tokenHash);
+            return row == null ? null : new UserSession(row.Id, row.UserId, row.LastUsedAt);
         }
+
         public void TouchSession(int sessionId, DateTime now)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = "UPDATE UserSessions SET LastUsedAt = @now WHERE Id = @id;";
-            command.Parameters.AddWithValue("@now", now.ToString("yyyy-MM-dd HH:mm:ss"));
-            command.Parameters.AddWithValue("@id", sessionId);
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            var when = Seconds(now);
+            ctx.UserSessions.Where(s => s.Id == sessionId)
+                .ExecuteUpdate(s => s.SetProperty(x => x.LastUsedAt, when));
         }
+
         public void DeleteSessionByTokenHash(string tokenHash)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM UserSessions WHERE TokenHash = @tokenHash;";
-            command.Parameters.AddWithValue("@tokenHash", tokenHash);
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            ctx.UserSessions.Where(s => s.TokenHash == tokenHash).ExecuteDelete();
         }
+
         public void DeleteSessionsForUser(int userId)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM UserSessions WHERE UserId = @userId;";
-            command.Parameters.AddWithValue("@userId", userId);
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            ctx.UserSessions.Where(s => s.UserId == userId).ExecuteDelete();
         }
-        public void Update(User user)
-        {
-            using var connection = db.CreateConnection();
-                connection.Open();
 
-                using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    UPDATE Users
-                    SET Username = @username,
-                        Passwordhash = @passwordhash,
-                        Role = @role,
-                        IsActive = @isActive
-                    WHERE ID = @id;
-                    ";
-                command.Parameters.AddWithValue("@username", user.Username);
-                command.Parameters.AddWithValue("@passwordhash", user.Password);
-                command.Parameters.AddWithValue("@role", (int)user.Role);
-                command.Parameters.AddWithValue("@isActive", user.IsActive ? 1 : 0);
-                command.Parameters.AddWithValue("@id", user.ID);
-                command.ExecuteNonQuery();
+        private static IQueryable<UserRow> Query(StockDbContext ctx, bool includeInactive)
+            => includeInactive ? ctx.Users : ctx.Users.Where(u => u.IsActive);
+
+        private static void Copy(User user, UserRow row)
+        {
+            row.Username = user.Username;
+            row.PasswordHash = user.Password;
+            row.Role = (int)user.Role;
+            row.IsActive = user.IsActive;
         }
+
+        private static User ToModel(UserRow r)
+            => new(r.Username, r.PasswordHash, (RoleType)r.Role, r.IsActive) { ID = r.Id };
+
+        // Sessions are stored to the second (same as before)
+        private static DateTime Seconds(DateTime d) => new(d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second, d.Kind);
     }
-}
+}

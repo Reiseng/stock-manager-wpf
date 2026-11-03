@@ -1,6 +1,7 @@
 // Checkout is the process of finalizing a sale or transaction, typically involving payment and receipt generation.
-using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using StockControl.Config.DataBaseConfig;
+using StockControl.Data.Ef;
 using StockControl.Enums;
 using StockControl.Models;
 using StockControl.Services;
@@ -13,278 +14,152 @@ namespace StockControl.Data
     public class CheckoutPersistence
     {
         private readonly DatabaseContext db;
-        private readonly ClientService clientService;
-        private readonly ProductService productService;
-        public CheckoutPersistence(DatabaseContext dbContext, ClientService ClientService, ProductService ProductService)
+
+        // The services are no longer needed (clients and products come in the same query),
+        // the parameters stay so nothing else has to change.
+        public CheckoutPersistence(DatabaseContext dbContext, ClientService? ClientService = null, ProductService? ProductService = null)
         {
             db = dbContext;
-            clientService = ClientService;
-            productService = ProductService;
         }
 
         public List<Checkout> GetAll()
         {
-        var checkouts = new List<Checkout>();
-        var itemsByCheckout = new Dictionary<int, List<CheckoutItem>>();
-
-        using var connection = db.CreateConnection();
-        connection.Open();
-
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = @"
-                SELECT Id, CheckoutId, ProductId, Quantity, UnitPrice
-                FROM CheckoutItems;
-            ";
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                var checkoutId = reader.GetInt32(1);
-
-                var item = new CheckoutItem
-                {
-                    product = productService.GetProductByID(reader.GetInt32(2), includeInactive: true),
-                    Quantity = reader.GetDecimal(3),
-                    UnitPrice = reader.GetDecimal(4)
-                };
-
-                if (!itemsByCheckout.ContainsKey(checkoutId))
-                    itemsByCheckout[checkoutId] = new List<CheckoutItem>();
-
-                itemsByCheckout[checkoutId].Add(item);
-            }
+            using var ctx = db.CreateDbContext();
+            return WithDetails(ctx).OrderBy(c => c.Id).AsSplitQuery().AsEnumerable().Select(ToModel).ToList();
         }
-        using (var command = connection.CreateCommand())
+
+        public Checkout? GetByID(int id)
         {
-            command.CommandText = @"
-                SELECT Id, ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId,
-                       FiscalStatus, FiscalPointOfSale, FiscalVoucherType, FiscalVoucherNumber, Cae, CaeDueDate, FiscalMessage, FiscalProduction
-                FROM Checkouts;
-            ";
-
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                int checkoutId = reader.GetInt32(0);
-                Client client = clientService.GetClientByID(reader.GetInt32(1), includeInactive: true);
-                var checkout = new Checkout(
-                    client,
-                    itemsByCheckout.ContainsKey(checkoutId)
-                        ? itemsByCheckout[checkoutId]
-                        : new List<CheckoutItem>(),
-                    (InvoiceType)reader.GetInt32(2),
-                    (OperationType)reader.GetInt32(3),
-                    DateTime.Parse(reader.GetString(5)),
-                    reader.GetDecimal(4),
-                    reader.IsDBNull(6) ? null : reader.GetInt32(6)
-                );
-                checkout.ID = checkoutId;
-                ReadFiscal(reader, checkout);
-                checkouts.Add(checkout);
-            }
-}       return checkouts;
-    }
-        public Checkout GetByID(int id)
-        {
-            var itemsByCheckout = new Dictionary<int, List<CheckoutItem>>();
-            using var connection = db.CreateConnection();
-            connection.Open();
-
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = @"
-                    SELECT Id, CheckoutId, ProductId, Quantity, UnitPrice
-                    FROM CheckoutItems WHERE CheckoutId = @id;
-                ";
-
-                command.Parameters.AddWithValue("@id", id);
-
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    var checkoutId = reader.GetInt32(1);
-
-                    var item = new CheckoutItem
-                    {
-                        product = productService.GetProductByID(reader.GetInt32(2), includeInactive: true),
-                        Quantity = reader.GetDecimal(3),
-                        UnitPrice = reader.GetDecimal(4)
-                    };
-
-                    if (!itemsByCheckout.ContainsKey(checkoutId))
-                        itemsByCheckout[checkoutId] = new List<CheckoutItem>();
-
-                    itemsByCheckout[checkoutId].Add(item);
-                }
-            }
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = @"
-                    SELECT Id, ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId,
-                       FiscalStatus, FiscalPointOfSale, FiscalVoucherType, FiscalVoucherNumber, Cae, CaeDueDate, FiscalMessage, FiscalProduction
-                    FROM Checkouts WHERE Id = @id;
-                ";
-
-                command.Parameters.AddWithValue("@id", id);
-
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    int checkoutId = reader.GetInt32(0);
-                    Client client = clientService.GetClientByID(reader.GetInt32(1), includeInactive: true);
-                    var checkout = new Checkout(
-                        client,
-                        itemsByCheckout.ContainsKey(checkoutId)
-                            ? itemsByCheckout[checkoutId]
-                            : new List<CheckoutItem>(),
-                        (InvoiceType)reader.GetInt32(2),
-                        (OperationType)reader.GetInt32(3),
-                        DateTime.Parse(reader.GetString(5)),
-                        reader.GetDecimal(4),
-                        reader.IsDBNull(6) ? null : reader.GetInt32(6)
-                    );
-                    checkout.ID = checkoutId;
-                ReadFiscal(reader, checkout);
-                    return checkout;
-                }
-            }
-        return null;
-        }
-        private static void ReadFiscal(Microsoft.Data.Sqlite.SqliteDataReader reader, Checkout checkout)
-        {
-            checkout.FiscalStatus = (FiscalStatus)reader.GetInt32(7);
-            checkout.FiscalPointOfSale = reader.IsDBNull(8) ? null : reader.GetInt32(8);
-            checkout.FiscalVoucherType = reader.IsDBNull(9) ? null : reader.GetInt32(9);
-            checkout.FiscalVoucherNumber = reader.IsDBNull(10) ? null : reader.GetInt64(10);
-            checkout.Cae = reader.IsDBNull(11) ? null : reader.GetString(11);
-            checkout.CaeDueDate = reader.IsDBNull(12) ? null : DateTime.Parse(reader.GetString(12), System.Globalization.CultureInfo.InvariantCulture);
-            checkout.FiscalMessage = reader.IsDBNull(13) ? null : reader.GetString(13);
-            checkout.FiscalProduction = reader.GetInt32(14) == 1;
+            using var ctx = db.CreateDbContext();
+            var row = WithDetails(ctx).AsSplitQuery().FirstOrDefault(c => c.Id == id);
+            return row == null ? null : ToModel(row);
         }
 
         // Saves everything about the ARCA side of a sale (status, number, CAE, message)
         public void UpdateFiscal(Checkout c)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                UPDATE Checkouts
-                SET FiscalStatus = @status, FiscalPointOfSale = @pto, FiscalVoucherType = @type,
-                    FiscalVoucherNumber = @number, Cae = @cae, CaeDueDate = @due, FiscalMessage = @message,
-                    FiscalProduction = @production, InvoiceType = @invoiceType
-                WHERE Id = @id;";
-            command.Parameters.AddWithValue("@status", (int)c.FiscalStatus);
-            command.Parameters.AddWithValue("@pto", (object?)c.FiscalPointOfSale ?? DBNull.Value);
-            command.Parameters.AddWithValue("@type", (object?)c.FiscalVoucherType ?? DBNull.Value);
-            command.Parameters.AddWithValue("@number", (object?)c.FiscalVoucherNumber ?? DBNull.Value);
-            command.Parameters.AddWithValue("@cae", (object?)c.Cae ?? DBNull.Value);
-            command.Parameters.AddWithValue("@due", c.CaeDueDate.HasValue ? c.CaeDueDate.Value.ToString("yyyy-MM-dd") : DBNull.Value);
-            command.Parameters.AddWithValue("@message", (object?)c.FiscalMessage ?? DBNull.Value);
-            command.Parameters.AddWithValue("@production", c.FiscalProduction ? 1 : 0);
-            command.Parameters.AddWithValue("@invoiceType", (int)c.invoiceType);
-            command.Parameters.AddWithValue("@id", c.ID);
-            command.ExecuteNonQuery();
+            using var ctx = db.CreateDbContext();
+            var status = (int)c.FiscalStatus;
+            var invoiceType = (int)c.invoiceType;
+            DateTime? due = c.CaeDueDate?.Date;
+            ctx.Checkouts.Where(x => x.Id == c.ID).ExecuteUpdate(s => s
+                .SetProperty(x => x.FiscalStatus, status)
+                .SetProperty(x => x.FiscalPointOfSale, c.FiscalPointOfSale)
+                .SetProperty(x => x.FiscalVoucherType, c.FiscalVoucherType)
+                .SetProperty(x => x.FiscalVoucherNumber, c.FiscalVoucherNumber)
+                .SetProperty(x => x.Cae, c.Cae)
+                .SetProperty(x => x.CaeDueDate, due)
+                .SetProperty(x => x.FiscalMessage, c.FiscalMessage)
+                .SetProperty(x => x.FiscalProduction, c.FiscalProduction)
+                .SetProperty(x => x.InvoiceType, invoiceType));
         }
 
-        // Sales waiting for a CAE (no internet, ARCA down...)
-        public List<int> GetPendingFiscalIds()
+        // Sales waiting for a CAE (no internet, ARCA down...).
+        // pointOfSale: only the ones of that register (several registers share one
+        // database, each with its own point of sale; the other registers' sales
+        // are theirs to send). Sales without one (older versions) are anyone's.
+        public List<int> GetPendingFiscalIds(int? pointOfSale = null)
         {
-            var ids = new List<int>();
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = "SELECT Id FROM Checkouts WHERE FiscalStatus = @pending ORDER BY Id;";
-            command.Parameters.AddWithValue("@pending", (int)FiscalStatus.Pending);
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-                ids.Add(reader.GetInt32(0));
-            return ids;
+            using var ctx = db.CreateDbContext();
+            var pending = (int)FiscalStatus.Pending;
+            var query = ctx.Checkouts.Where(c => c.FiscalStatus == pending);
+            if (pointOfSale is int pos)
+                query = query.Where(c => c.FiscalPointOfSale == pos || c.FiscalPointOfSale == null);
+            return query.OrderBy(c => c.Id).Select(c => c.Id).ToList();
         }
 
         // Sum of quantities already returned through credit notes, per product
         public Dictionary<int, decimal> GetCreditedQuantities(int relatedCheckoutId)
         {
-            var result = new Dictionary<int, decimal>();
-            using var connection = db.CreateConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT ci.ProductId, SUM(ci.Quantity)
-                FROM CheckoutItems ci
-                JOIN Checkouts c ON c.Id = ci.CheckoutId
-                WHERE c.RelatedCheckoutId = @relatedId AND c.OperationType = @creditNote
-                GROUP BY ci.ProductId;
-            ";
-            command.Parameters.AddWithValue("@relatedId", relatedCheckoutId);
-            command.Parameters.AddWithValue("@creditNote", (int)OperationType.CreditNote);
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-                result[reader.GetInt32(0)] = reader.GetDecimal(1);
-            return result;
+            using var ctx = db.CreateDbContext();
+            var creditNote = (int)OperationType.CreditNote;
+            return ctx.CheckoutItems
+                .Where(i => ctx.Checkouts.Any(c => c.Id == i.CheckoutId && c.RelatedCheckoutId == relatedCheckoutId && c.OperationType == creditNote))
+                .GroupBy(i => i.ProductId)
+                .Select(g => new { ProductId = g.Key, Quantity = g.Sum(i => i.Quantity) })
+                .ToDictionary(x => x.ProductId, x => x.Quantity);
         }
-        public Checkout Add(Checkout _checkout, IEnumerable<StockChange> stockChanges)
+
+        // Stock and the sale are saved together or not at all
+        public Checkout Add(Checkout checkout, IEnumerable<StockChange> stockChanges)
         {
-            using var connection = db.CreateConnection();
-            connection.Open();
-            // Everything below commits together or not at all
-            using var transaction = connection.BeginTransaction();
+            using var ctx = db.CreateDbContext();
+            using var transaction = ctx.Database.BeginTransaction();
 
             foreach (var change in stockChanges)
             {
-                using var stockCommand = connection.CreateCommand();
-                if (change.Delta < 0)
-                {
+                var id = change.ProductId;
+                var qty = Math.Abs(change.Delta);
+                int updated = change.Delta < 0
                     // Conditional update: the stock check and the decrement are one atomic
                     // statement, so two registers can't sell the last unit at the same time
-                    stockCommand.CommandText = @"
-                        UPDATE Products SET Stock = Stock - @qty
-                        WHERE Id = @id AND Stock >= @qty;";
-                }
-                else
-                {
-                    stockCommand.CommandText = @"
-                        UPDATE Products SET Stock = Stock + @qty
-                        WHERE Id = @id;";
-                }
-                stockCommand.Parameters.Add("@qty", SqliteType.Real).Value = (double)Math.Abs(change.Delta);
-                stockCommand.Parameters.AddWithValue("@id", change.ProductId);
-                if (stockCommand.ExecuteNonQuery() == 0)
+                    ? ctx.Products.Where(p => p.Id == id && p.Stock >= qty)
+                        .ExecuteUpdate(s => s.SetProperty(p => p.Stock, p => p.Stock - qty))
+                    : ctx.Products.Where(p => p.Id == id)
+                        .ExecuteUpdate(s => s.SetProperty(p => p.Stock, p => p.Stock + qty));
+                if (updated == 0)
                     throw new Exception($"Stock insuficiente para {change.ProductName}");
             }
 
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                INSERT INTO Checkouts (ClientId, InvoiceType, OperationType, Total, CreatedAt, RelatedCheckoutId, FiscalStatus, FiscalProduction)
-                VALUES (@clientId, @invoiceType, @operationType, @total, @createdAt, @relatedCheckoutId, @fiscalStatus, @fiscalProduction);
-                SELECT last_insert_rowid();
-                ";
-            command.Parameters.AddWithValue("@clientId", _checkout.Client?.ID ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@invoiceType", (int)_checkout.invoiceType);
-            command.Parameters.AddWithValue("@operationType", (int)_checkout.operationType);
-            command.Parameters.AddWithValue("@total", _checkout.Total);
-            command.Parameters.AddWithValue("@createdAt", _checkout.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-            command.Parameters.AddWithValue("@relatedCheckoutId", _checkout.RelatedCheckoutId ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@fiscalStatus", (int)_checkout.FiscalStatus);
-            command.Parameters.AddWithValue("@fiscalProduction", _checkout.FiscalProduction ? 1 : 0);
-            var checkoutId = (long)command.ExecuteScalar()!;
-
-            foreach (var item in _checkout.Items)
+            var row = new CheckoutRow
             {
-                using var itemCommand = connection.CreateCommand();
-                itemCommand.CommandText = @"
-                    INSERT INTO CheckoutItems (CheckoutId, ProductId, Quantity, UnitPrice)
-                    VALUES (@checkoutId, @productId, @quantity, @unitPrice);
-                    ";
-                itemCommand.Parameters.AddWithValue("@checkoutId", checkoutId);
-                itemCommand.Parameters.AddWithValue("@productId", item.product.Id);
-                itemCommand.Parameters.AddWithValue("@quantity", item.Quantity);
-                itemCommand.Parameters.AddWithValue("@unitPrice", item.UnitPrice);
-                itemCommand.ExecuteNonQuery();
-            }
+                ClientId = checkout.Client?.ID,
+                InvoiceType = (int)checkout.invoiceType,
+                OperationType = (int)checkout.operationType,
+                Total = checkout.Total,
+                CreatedAt = checkout.Date,
+                RelatedCheckoutId = checkout.RelatedCheckoutId,
+                FiscalStatus = (int)checkout.FiscalStatus,
+                FiscalProduction = checkout.FiscalProduction,
+                FiscalPointOfSale = checkout.FiscalPointOfSale,
+                Items = checkout.Items.Select(i => new CheckoutItemRow
+                {
+                    ProductId = i.product.Id,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice,
+                }).ToList(),
+            };
+            ctx.Checkouts.Add(row);
+            ctx.SaveChanges();
             transaction.Commit();
-            _checkout.ID = (int)checkoutId;
-            return _checkout;
+
+            checkout.ID = row.Id;
+            return checkout;
+        }
+
+        private static IQueryable<CheckoutRow> WithDetails(StockDbContext ctx)
+            => ctx.Checkouts
+                .Include(c => c.Client)
+                .Include(c => c.Items.OrderBy(i => i.Id)).ThenInclude(i => i.Product);
+
+        private static Checkout ToModel(CheckoutRow r)
+        {
+            var items = r.Items.Select(i => new CheckoutItem
+            {
+                product = i.Product != null ? ProductPersistence.ToModel(i.Product) : null!,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+            }).ToList();
+
+            return new Checkout(
+                r.Client != null ? ClientPersistence.ToModel(r.Client) : null,
+                items,
+                (InvoiceType)r.InvoiceType,
+                (OperationType)r.OperationType,
+                r.CreatedAt,
+                r.Total,
+                r.RelatedCheckoutId)
+            {
+                ID = r.Id,
+                FiscalStatus = (FiscalStatus)r.FiscalStatus,
+                FiscalPointOfSale = r.FiscalPointOfSale,
+                FiscalVoucherType = r.FiscalVoucherType,
+                FiscalVoucherNumber = r.FiscalVoucherNumber,
+                Cae = r.Cae,
+                CaeDueDate = r.CaeDueDate,
+                FiscalMessage = r.FiscalMessage,
+                FiscalProduction = r.FiscalProduction,
+            };
         }
     }
-}
+}

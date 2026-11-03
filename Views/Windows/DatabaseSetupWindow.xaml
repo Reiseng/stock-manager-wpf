@@ -1,0 +1,127 @@
+<Window x:Class="StockControl.Views.Windows.DatabaseSetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Style="{StaticResource AppWindow}"
+        Background="{DynamicResource Brush.Surface}"
+        Title="Base de datos"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <!-- A choice shown as a card -->
+        <Style x:Key="OptionCard" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" BorderThickness="2" CornerRadius="10" Padding="16,14"
+                                BorderBrush="{DynamicResource Brush.Line}" Background="{DynamicResource Brush.Surface}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.LineStrong}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Primary}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.PrimarySoft}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Width="560" Margin="32,28,32,26">
+        <TextBlock Text="¿Dónde se guardan los datos?" Style="{StaticResource SectionTitle}"/>
+        <TextBlock Style="{StaticResource Subtle}" Margin="0,4,0,18"
+                   Text="Productos, clientes, ventas y usuarios. Se puede cambiar después desde Configuración."/>
+
+        <RadioButton Style="{StaticResource OptionCard}" GroupName="Engine" IsChecked="{Binding UseSqlite}">
+            <StackPanel>
+                <TextBlock Text="En esta PC" FontWeight="SemiBold" FontSize="15"/>
+                <TextBlock Style="{StaticResource Subtle}" Margin="0,3,0,0"
+                           Text="Para una sola caja. No hay que instalar nada más y funciona sin internet."/>
+            </StackPanel>
+        </RadioButton>
+        <RadioButton Style="{StaticResource OptionCard}" GroupName="Engine" IsChecked="{Binding UsePostgres}" Margin="0,10,0,0">
+            <StackPanel>
+                <TextBlock Text="En un servidor PostgreSQL" FontWeight="SemiBold" FontSize="15"/>
+                <TextBlock Style="{StaticResource Subtle}" Margin="0,3,0,0"
+                           Text="Para varias cajas que comparten stock y ventas. El servidor puede ser una PC del negocio en la red local."/>
+            </StackPanel>
+        </RadioButton>
+
+        <!-- Server connection -->
+        <StackPanel Margin="0,8,0,0" Visibility="{Binding UsePostgres, Converter={StaticResource BoolToVisibility}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="110"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Servidor" Style="{StaticResource FieldLabel}"/>
+                    <TextBox Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" Tag="Ej: 192.168.0.10 o localhost"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Puerto" Style="{StaticResource FieldLabel}"/>
+                    <TextBox Text="{Binding PortText, UpdateSourceTrigger=LostFocus}"/>
+                </StackPanel>
+            </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Base de datos" Style="{StaticResource FieldLabel}"/>
+                    <TextBox Text="{Binding DatabaseName, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Usuario" Style="{StaticResource FieldLabel}"/>
+                    <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="4">
+                    <TextBlock Text="Contraseña" Style="{StaticResource FieldLabel}"/>
+                    <PasswordBox x:Name="PasswordInput" PasswordChanged="PasswordInput_PasswordChanged"/>
+                </StackPanel>
+            </Grid>
+
+            <CheckBox Margin="0,16,0,0" IsChecked="{Binding CopyLocalData}"
+                      Visibility="{Binding CanCopyLocalData, Converter={StaticResource BoolToVisibility}}"
+                      Content="Copiar al servidor los datos que ya hay en esta PC"/>
+
+            <Button HorizontalAlignment="Left" Margin="0,16,0,0" Content="Probar conexión" Command="{Binding TestCommand}"/>
+        </StackPanel>
+
+        <!-- Result / progress -->
+        <TextBlock Text="{Binding Result}" TextWrapping="Wrap" Margin="0,14,0,0"
+                   Visibility="{Binding Result, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}, ConverterParameter=Inverse}">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource Brush.Danger}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ResultOk}" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Primary}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+        <ProgressBar IsIndeterminate="True" Height="4" Margin="0,10,0,0"
+                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+            <Button Content="Cancelar" Command="{Binding CancelCommand}" IsCancel="True" Margin="0,0,10,0"
+                    Visibility="{Binding NotFirstRun, Converter={StaticResource BoolToVisibility}}"/>
+            <Button Style="{StaticResource Button.Primary}" Content="{Binding SaveText}" Command="{Binding SaveCommand}" IsDefault="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

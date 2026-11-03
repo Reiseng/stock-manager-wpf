@@ -130,6 +130,8 @@ namespace StockControl.Services
                 var (letter, _) = AppServices.FiscalService.Prepare(_currentCheckout);
                 _currentCheckout.invoiceType = FiscalRules.InvoiceTypeFor(letter);
                 _currentCheckout.FiscalProduction = FiscalService.Config.Production;
+                // With several registers on one database, only this one retries it
+                _currentCheckout.FiscalPointOfSale = FiscalService.Config.PointOfSale;
             }
 
             // Stock movements: a sale takes stock out, a credit note puts it back.

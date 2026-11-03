@@ -413,7 +413,35 @@ namespace StockControl.ViewModels.Settings
         public RelayCommand OpenBackupFolderCommand { get; }
 
         public string DatabasePath => AppServices.BackupService.DatabasePath;
-        public string SchemaVersionText => $"Versión de la base de datos: {DatabaseInitializer.LatestVersion}";
+        public string SchemaVersionText => AppServices.DatabaseContext.IsSqlite
+            ? $"Versión de la base de datos: {DatabaseInitializer.LatestVersion}"
+            : $"Servidor PostgreSQL, esquema {DatabaseInitializer.LatestPostgresVersion}";
+
+        public string DatabaseKindText => AppServices.DatabaseContext.IsSqlite
+            ? "En esta PC (una sola caja)"
+            : $"Servidor PostgreSQL: {ConfigService.Config.Database.Host}:{ConfigService.Config.Database.Port}, base «{ConfigService.Config.Database.Name}»";
+
+        public RelayCommand ChangeDatabaseCommand => new(_ => ChangeDatabase());
+
+        private void ChangeDatabase()
+        {
+            var window = new DatabaseSetupWindow(firstRun: false) { Owner = Application.Current.MainWindow };
+            if (window.ShowDialog() != true)
+                return;
+            MessageBox.Show("Listo. El programa se va a reiniciar para usar la nueva base de datos.",
+                "Base de datos", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                var exe = Environment.ProcessPath;
+                if (!string.IsNullOrEmpty(exe))
+                    Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                ErrorLog.Write("Reiniciar", ex);
+            }
+            Application.Current.Shutdown();
+        }
         public string LastBackupText
         {
             get
