@@ -1,0 +1,5 @@
+- Facturación electrónica con ARCA: casilla "Facturar en ARCA" (F9) en la caja, en prueba (homologación) o producción.
+- Ventas pendientes de CAE se reintentan solas; las internas se pueden facturar después desde el Historial.
+- Condición frente al IVA en los clientes (define Factura A, B o C).
+- Comprobantes en PDF con CAE, código QR de ARCA y leyenda de transparencia fiscal.
+- Botón "Soporte" con los datos de contacto (en el menú, el login y la caja).
