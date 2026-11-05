@@ -238,6 +238,22 @@ namespace StockControl.Services.Arca
             using (key)
             {
                 var ticket = await new WsaaClient(Http, production, EnvironmentFolder(production)).GetTicketAsync(certificate, key);
+
+                // Is the configured point of sale one of the CUIT's web-service points?
+                List<WsPointOfSale>? points = null;
+                try { points = await wsfe.PointsOfSaleAsync(ticket, cuit); }
+                catch (Exception ex) { ErrorLog.Write("ARCA puntos de venta", ex); }
+                if (points != null && !points.Any(p => p.Number == Config.PointOfSale && p.Usable))
+                {
+                    var usable = points.Where(p => p.Usable).Select(p => p.Number.ToString()).ToList();
+                    return $"El certificado funciona ({env}), pero el punto de venta {Config.PointOfSale} no está habilitado para web services en el CUIT {cuit}.\n" +
+                           (usable.Count > 0
+                               ? $"Puntos de venta habilitados para el programa: {string.Join(", ", usable)}. Poné uno de esos."
+                               : "Ese CUIT no tiene ningún punto de venta para web services. Crealo en ARCA > Administración de puntos de venta y domicilios, " +
+                                 "con el sistema \"Factura Electrónica - Monotributo - Web Services\" (o \"RECE para aplicativo y web services\" si es Responsable Inscripto). " +
+                                 "Los de \"Comprobantes en línea\" no sirven. Si lo acabás de crear, puede tardar un rato en aparecer.");
+                }
+
                 var letter = FiscalRules.Letter(company.taxCondition, TaxCondition.FinalConsumer);
                 var type = FiscalRules.VoucherType(letter, OperationType.Sale);
                 var last = await wsfe.LastAuthorizedAsync(ticket, cuit, Config.PointOfSale, type);

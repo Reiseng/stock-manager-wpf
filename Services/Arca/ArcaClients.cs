@@ -191,6 +191,11 @@ namespace StockControl.Services.Arca
 
     public record ConsultedVoucher(long Number, decimal Total, long DocNumber, string? Cae, DateTime? CaeDueDate);
 
+    public record WsPointOfSale(int Number, string Kind, bool Blocked, bool Removed)
+    {
+        public bool Usable => !Blocked && !Removed;
+    }
+
     public class WsfeClient
     {
         public const string Ns = "http://ar.gov.afip.dif.FEV1/";
@@ -221,6 +226,28 @@ namespace StockControl.Services.Arca
             ThrowOnErrors(doc);
             var nro = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "CbteNro")?.Value;
             return long.TryParse(nro, out var n) ? n : 0;
+        }
+
+        // Points of sale of the CUIT enabled for web services (the ones of
+        // "Comprobantes en línea" are not listed: the program can't use them)
+        public async Task<List<WsPointOfSale>> PointsOfSaleAsync(AccessTicket ticket, string cuit, CancellationToken ct = default)
+        {
+            var doc = await CallAsync("FEParamGetPtosVenta", new XElement(X + "FEParamGetPtosVenta",
+                Auth(ticket, cuit)), ct);
+            return doc.Descendants().Where(e => e.Name.LocalName == "PtoVenta")
+                .Select(p =>
+                {
+                    string? V(string n) => p.Elements().FirstOrDefault(e => e.Name.LocalName == n)?.Value;
+                    var down = V("FchBaja");
+                    return new WsPointOfSale(
+                        int.TryParse(V("Nro"), out var nro) ? nro : 0,
+                        V("EmisionTipo") ?? "",
+                        string.Equals(V("Bloqueado"), "S", StringComparison.OrdinalIgnoreCase),
+                        !string.IsNullOrWhiteSpace(down) && !string.Equals(down, "NULL", StringComparison.OrdinalIgnoreCase));
+                })
+                .Where(p => p.Number > 0)
+                .OrderBy(p => p.Number)
+                .ToList();
         }
 
         public async Task<CaeResult> RequestCaeAsync(AccessTicket ticket, string cuit, VoucherRequest request, CancellationToken ct = default)
