@@ -82,15 +82,10 @@ Business data and logo, ARCA electronic invoicing, ticket printer, themes, datab
 ### Install
 Download the installer from the [latest release](https://github.com/Reiseng/stock-manager-wpf/releases/latest) and run it. It includes everything (no .NET installation needed) and updates itself afterwards.
 
-On first run, choose where to keep the data: **on this PC** (one register) or **on a PostgreSQL server** (several registers).
+When it opens for the first time, choose where to keep the data: **on this PC** (one register) or **on a PostgreSQL server** (several registers).
 
-### Default credentials
-A fresh database creates an administrator:
-
-- User: `Admin`
-- Password: `Admin123`
-
-Change the password after the first login.
+### First run
+On a new database the program asks you to create the administrator account (user name and password). There is no default account.
 
 ### Run from source
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download) on Windows.

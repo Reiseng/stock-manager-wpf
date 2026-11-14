@@ -1,5 +1,2 @@
-- Nueva forma de guardar los datos (EF Core): todo sigue igual en esta PC, y ahora también se puede usar un servidor PostgreSQL para varias cajas.
-- Configuración > Base de datos > "Cambiar base de datos...": elegís entre esta PC o un servidor, con prueba de conexión, y podés copiar los datos de esta PC al servidor.
-- Con varias cajas, cada una reintenta solo sus ventas pendientes de CAE (según su punto de venta).
-- Las copias de seguridad también funcionan con el servidor (se guardan como archivo en esta PC).
-- El historial de ventas carga más rápido.
+- Primera instalación: el programa pide crear el usuario administrador (ya no existe el usuario por defecto Admin / Admin123).
+- Las instalaciones que ya tienen usuarios no cambian.

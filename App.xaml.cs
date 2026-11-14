@@ -96,11 +96,24 @@ public partial class App : Application
         // Created before any window: they show the installed version (no network here)
         AppServices.UpdateService = new UpdateService();
 
+        // Brand-new database: there are no users yet, the first one is created now
+        User? newAdmin = null;
+        if (AppServices.UserService.GetUsers(true).Count == 0)
+        {
+            var firstAdmin = new Views.Windows.FirstAdminWindow();
+            if (firstAdmin.ShowDialog() != true || firstAdmin.CreatedUser == null)
+            {
+                Shutdown(0); // it will be asked again next time
+                return;
+            }
+            newAdmin = firstAdmin.CreatedUser; // already signed in: straight to the program
+        }
+
         // "Mantener sesión iniciada": go straight in if there is a valid saved session
-        User? rememberedUser = null;
+        User? rememberedUser = newAdmin;
         try
         {
-            rememberedUser = AppServices.UserService.TryAutoLogin();
+            rememberedUser ??= AppServices.UserService.TryAutoLogin();
         }
         catch (Exception)
         {

@@ -117,6 +117,12 @@ namespace StockControl.Services.Database
 
         public static int LatestVersion => Migrations[^1].Version;
 
+        // A new database has NO users: the program asks to create the administrator
+        // on first run (Views/Windows/FirstAdminWindow). Only the automated tests
+        // turn this on to get the old default account (Admin / Admin123).
+        public static bool SeedDefaultAdmin { get; set; }
+        private const string DefaultAdminHash = "ZBGIDpYmoqYbL6pnHumsXg==|hf+NGcBFeOjGLSHlO8IL2P/ZldaxLZzKWAvddXyKb0U=";
+
         // Same schema for PostgreSQL (a shared server for several registers).
         // Its own numbering: version 1 is everything SQLite has up to version 5.
         // Names are quoted to keep the same capitalisation EF Core uses.
@@ -274,11 +280,13 @@ namespace StockControl.Services.Database
                 ctx.Database.ExecuteSqlRaw(@"DELETE FROM ""SchemaInfo""; INSERT INTO ""SchemaInfo"" (""Version"") VALUES (" + migration.Version + ");");
             }
 
-            ctx.Database.ExecuteSqlRaw(@"
-                INSERT INTO ""Users"" (""Username"", ""PasswordHash"", ""Role"", ""IsActive"")
-                SELECT 'Admin', 'ZBGIDpYmoqYbL6pnHumsXg==|hf+NGcBFeOjGLSHlO8IL2P/ZldaxLZzKWAvddXyKb0U=', 0, TRUE
-                WHERE NOT EXISTS (SELECT 1 FROM ""Users"");
+            if (SeedDefaultAdmin)
+                ctx.Database.ExecuteSqlRaw(@"
+                    INSERT INTO ""Users"" (""Username"", ""PasswordHash"", ""Role"", ""IsActive"")
+                    SELECT 'Admin', '" + DefaultAdminHash + @"', 0, TRUE
+                    WHERE NOT EXISTS (SELECT 1 FROM ""Users"");");
 
+            ctx.Database.ExecuteSqlRaw(@"
                 INSERT INTO ""Clients"" (""Dni"", ""Name"", ""LastName"", ""Email"", ""Phone"", ""Address"", ""IsActive"", ""TaxCondition"")
                 SELECT '00000000', 'Consumidor', 'Final', NULL, NULL, NULL, TRUE, 3
                 WHERE NOT EXISTS (SELECT 1 FROM ""Clients"" WHERE ""Dni"" = '00000000');
@@ -307,12 +315,10 @@ namespace StockControl.Services.Database
         private static void Seed(SqliteConnection connection)
         {
             using var command = connection.CreateCommand();
-            command.CommandText = @"
-                -- Default admin (Admin / Admin123) only for a brand-new database
+            command.CommandText = (SeedDefaultAdmin ? @"
                 INSERT INTO Users (Username, PasswordHash, Role, IsActive)
-                SELECT 'Admin', 'ZBGIDpYmoqYbL6pnHumsXg==|hf+NGcBFeOjGLSHlO8IL2P/ZldaxLZzKWAvddXyKb0U=', 0, 1
-                WHERE NOT EXISTS (SELECT 1 FROM Users);
-
+                SELECT 'Admin', '" + DefaultAdminHash + @"', 0, 1
+                WHERE NOT EXISTS (SELECT 1 FROM Users);" : "") + @"
                 INSERT INTO Clients (Dni, Name, LastName, Email, Phone, Address, IsActive)
                 SELECT '00000000', 'Consumidor', 'Final', NULL, NULL, NULL, 1
                 WHERE NOT EXISTS (SELECT 1 FROM Clients WHERE Dni = '00000000');
